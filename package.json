@@ -1,0 +1,52 @@
+{
+  "name": "@ga-ut/store",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "author": "ga-ut",
+  "scripts": {
+    "build": "node build",
+    "prepare": "npm run build"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      },
+      "require": {
+        "types": "./cjs/index.d.cts",
+        "default": "./cjs/index.cjs"
+      }
+    }
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.9.3",
+    "@types/react": "^18.3.12",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "prettier": "^3.3.3",
+    "react": "19.0.0-rc.1",
+    "react-dom": "19.0.0-rc.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.15.0"
+  },
+  "peerDependencies": {
+    "@types/react": ">=18.0.0",
+    "react": ">=18.0.0"
+  },
+  "keywords": [
+    "react",
+    "state",
+    "manager",
+    "management",
+    "global",
+    "store"
+  ],
+  "sideEffects": false,
+  "packageManager": "yarn@4.5.2"
+}
