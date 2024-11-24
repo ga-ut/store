@@ -6,8 +6,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "declaration": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "baseUrl": ".",
+    "outDir": "."
   },
-  "include": ["src/**/*", "tests"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
