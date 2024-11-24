@@ -4,7 +4,7 @@
 const config = {
     trailingComma: "none",
     tabWidth: 2,
-    semi: false,
+    semi: true,
     singleQuote: true,
 };
 

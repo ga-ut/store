@@ -1,49 +1,40 @@
-import { useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react';
 
-export type Listener = () => void
+export type Listener = () => void;
 
 export class Store<T> {
-  snapshot: T
+  state: T;
 
-  private listeners = new Set<Listener>()
+  private listeners = new Set<Listener>();
 
   constructor(params: T) {
-    this.snapshot = params
+    this.state = params;
   }
 
-  notify = () => {
-    this.listeners.forEach((listener) => listener())
-  }
+  private notify = () => {
+    this.listeners.forEach((listener) => listener());
+  };
 
   subscribe = (listener: Listener): Listener => {
-    this.listeners.add(listener)
-    return () => this.listeners.delete(listener)
-  }
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
 
-  getSnapshot = () => {
-    return this.snapshot
-  }
+  setState = (fn: (snapshot: T) => Partial<T>) => {
+    const prevSnapshot = this.state;
 
-  setSnapshot = (fn: (snapshot: Partial<T>) => Partial<T>) => {
-    const prevSnapshot = this.snapshot
-
-    this.snapshot = {
+    this.state = {
       ...prevSnapshot,
-      ...fn(this.snapshot)
-    }
+      ...fn(this.state)
+    };
 
-    this.notify()
-  }
+    this.notify();
+  };
 }
 
 export const useStore = <T>(store: Store<T>) => {
-  const state = useSyncExternalStore(
+  useSyncExternalStore(
     (listener) => store.subscribe(listener),
-    () => store.getSnapshot()
-  )
-
-  return {
-    state,
-    setState: store.setSnapshot
-  }
-}
+    () => store.state
+  );
+};
