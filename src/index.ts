@@ -11,7 +11,7 @@ export class Store<T> {
     this.snapshot = params
   }
 
-  notify = (): void => {
+  notify = () => {
     this.listeners.forEach((listener) => listener())
   }
 
@@ -20,25 +20,23 @@ export class Store<T> {
     return () => this.listeners.delete(listener)
   }
 
-  getSnapshot = (): T => {
+  getSnapshot = () => {
     return this.snapshot
   }
 
-  setSnapshot = (snapshot: Partial<T>): void => {
+  setSnapshot = (fn: (snapshot: Partial<T>) => Partial<T>) => {
     const prevSnapshot = this.snapshot
 
     this.snapshot = {
       ...prevSnapshot,
-      ...snapshot
+      ...fn(this.snapshot)
     }
 
     this.notify()
   }
 }
 
-export const useStore = <T>(
-  store: Store<T>
-): { state: T; setState: (snapshot: Partial<T>) => void } => {
+export const useStore = <T>(store: Store<T>) => {
   const state = useSyncExternalStore(
     (listener) => store.subscribe(listener),
     () => store.getSnapshot()
@@ -46,6 +44,6 @@ export const useStore = <T>(
 
   return {
     state,
-    setState: (snapshot: Partial<T>) => store.setSnapshot(snapshot)
+    setState: store.setSnapshot
   }
 }

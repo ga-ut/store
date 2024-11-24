@@ -6,11 +6,8 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "declaration": true,
-    "isolatedDeclarations": true,
-    "emitDeclarationOnly": true,
-    "baseUrl": ".",
-    "outDir": "."
+    "emitDeclarationOnly": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests"],
   "exclude": ["node_modules"]
 }
