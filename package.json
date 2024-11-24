@@ -8,7 +8,8 @@
   "author": "ga-ut",
   "scripts": {
     "build": "node build",
-    "prepare": "npm run build"
+    "prepare": "yarn build",
+    "postinstall": "yarn build"
   },
   "exports": {
     ".": {
