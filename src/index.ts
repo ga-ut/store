@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from 'react';
-
 export type Listener = () => void;
 
 export class Store<T> {
@@ -31,10 +29,3 @@ export class Store<T> {
     this.notify();
   };
 }
-
-export const useStore = <T>(store: Store<T>) => {
-  useSyncExternalStore(
-    (listener) => store.subscribe(listener),
-    () => store.state
-  );
-};
