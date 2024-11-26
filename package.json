@@ -2,8 +2,8 @@
   "name": "@ga-ut/store",
   "version": "1.0.0",
   "description": "",
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
   "type": "commonjs",
   "author": "ga-ut",
   "scripts": {
@@ -18,16 +18,6 @@
       "default": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
-      }
-    },
-    "./react": {
-      "import": {
-        "types": "./build/react/useStore.d.mts",
-        "default": "./build/react/useStore.mjs"
-      },
-      "default": {
-        "types": "./build/react/useStore.d.ts",
-        "default": "./build/react/useStore.js"
       }
     }
   },

@@ -22,9 +22,12 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
 // src/index.ts
 var src_exports = {};
 __export(src_exports, {
-  Store: () => Store
+  Store: () => Store,
+  useStore: () => useStore
 });
 module.exports = __toCommonJS(src_exports);
+
+// src/core/index.ts
 var Store = class {
   constructor(params) {
     __publicField(this, "state");
@@ -46,4 +49,13 @@ var Store = class {
     });
     this.state = params;
   }
+};
+
+// src/react/index.ts
+var import_react = require("react");
+var useStore = (store) => {
+  (0, import_react.useSyncExternalStore)(
+    (listener) => store.subscribe(listener),
+    () => store.state
+  );
 };

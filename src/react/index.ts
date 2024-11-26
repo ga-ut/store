@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { Store } from 'src';
+import { Store } from '../core/index';
 
 export const useStore = <T>(store: Store<T>) => {
   useSyncExternalStore(
