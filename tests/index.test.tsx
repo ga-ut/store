@@ -1,8 +1,9 @@
 import React from 'react';
-import { useStore, Store } from '../src';
 import { expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { Store } from '../src';
+import { useStore } from '../src/react/useStore';
 
 const countStore = new Store({
   count: 1,

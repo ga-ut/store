@@ -4,7 +4,7 @@
   "description": "",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "module",
+  "type": "commonjs",
   "author": "ga-ut",
   "scripts": {
     "build": "node build"
@@ -15,7 +15,7 @@
         "types": "./build/index.d.mts",
         "default": "./build/index.mjs"
       },
-      "require": {
+      "default": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
       }
@@ -25,7 +25,7 @@
         "types": "./build/react/useStore.d.mts",
         "default": "./build/react/useStore.mjs"
       },
-      "require": {
+      "default": {
         "types": "./build/react/useStore.d.ts",
         "default": "./build/react/useStore.js"
       }
