@@ -12,12 +12,22 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./index.d.ts",
-        "default": "./index.js"
+        "types": "./build/index.d.ts",
+        "default": "./build/index.js"
       },
       "require": {
-        "types": "./cjs/index.d.cts",
-        "default": "./cjs/index.cjs"
+        "types": "./build/index.d.cts",
+        "default": "./build/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./build/react/useStore.d.ts",
+        "default": "./build/react/useStore.js"
+      },
+      "require": {
+        "types": "./build/react/useStore.d.cts",
+        "default": "./build/react/useStore.cjs"
       }
     }
   },
