@@ -10,7 +10,7 @@ const external = [
 
 esbuild.buildSync({
   entryPoints: ['src/index.ts'],
-  outfile: 'build/index.js',
+  outfile: 'build/index.mjs',
   external,
   format: 'esm',
   target: 'es2018',
@@ -20,7 +20,7 @@ esbuild.buildSync({
 
 esbuild.buildSync({
   entryPoints: ['src/index.ts'],
-  outfile: 'build/index.cjs',
+  outfile: 'build/index.js',
   external,
   format: 'cjs',
   target: 'es2018',
@@ -30,7 +30,7 @@ esbuild.buildSync({
 
 esbuild.buildSync({
   entryPoints: ['src/react/useStore.ts'],
-  outfile: 'build/react/useStore.js',
+  outfile: 'build/react/useStore.mjs',
   external,
   format: 'esm',
   target: 'es2018',
@@ -40,7 +40,7 @@ esbuild.buildSync({
 
 esbuild.buildSync({
   entryPoints: ['src/react/useStore.ts'],
-  outfile: 'build/react/useStore.cjs',
+  outfile: 'build/react/useStore.js',
   external,
   format: 'cjs',
   target: 'es2018',
@@ -49,5 +49,5 @@ esbuild.buildSync({
 });
 
 execSync('npx tsc');
-copyFileSync('build/index.d.ts', 'build/index.d.cts');
-copyFileSync('build/react/useStore.d.ts', 'build/react/useStore.d.cts');
+copyFileSync('build/index.d.ts', 'build/index.d.mts');
+copyFileSync('build/react/useStore.d.ts', 'build/react/useStore.d.mts');
