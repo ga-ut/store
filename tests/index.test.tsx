@@ -3,15 +3,18 @@ import { expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { Store } from '../src';
-import { useStore } from '../src/react/useStore';
+import { useStore } from '../src/react';
 
 const countStore = new Store({
   count: 1,
+  nope() {
+    this.count = this.count;
+  },
   inc() {
-    countStore.setState(({ count }) => ({ count: count + 1 }));
+    this.count += 1;
   },
   dec() {
-    countStore.setState(({ count }) => ({ count: count - 1 }));
+    this.count -= 1;
   }
 });
 
@@ -57,4 +60,34 @@ test('Just count rendered', async () => {
   expect(countRender).toBe(2);
   expect(incBtnRender).toBe(1);
   expect(decBtnRender).toBe(1);
+
+  screen.getByText('2');
+});
+
+test('Shallow state change test', async () => {
+  let countRender = 0;
+  let nopeBtnRender = 0;
+
+  function Count() {
+    useStore(countStore);
+    countRender++;
+    return countStore.state.count;
+  }
+
+  function NopeBtn() {
+    nopeBtnRender++;
+    return <button onClick={countStore.state.nope}>nope</button>;
+  }
+
+  render(
+    <>
+      <Count />
+      <NopeBtn />
+    </>
+  );
+
+  await userEvent.click(screen.getByRole('button', { name: 'nope' }));
+
+  expect(countRender).toBe(1);
+  expect(nopeBtnRender).toBe(1);
 });
