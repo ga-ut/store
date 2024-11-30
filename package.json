@@ -8,7 +8,7 @@
   "author": "ga-ut",
   "scripts": {
     "build": "node build",
-    "pre-push": "npm run build && git add build && git commit -m 'Upload build files' || true"
+    "pre-push": "npm run build && git add build && git commit --amend"
   },
   "exports": {
     ".": {
