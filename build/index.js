@@ -77,6 +77,7 @@ var import_react = require("react");
 var useStore = (store) => {
   (0, import_react.useSyncExternalStore)(
     (listener) => store.subscribe(listener),
+    () => store.state,
     () => store.state
   );
 };

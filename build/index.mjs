@@ -52,6 +52,7 @@ import { useSyncExternalStore } from "react";
 var useStore = (store) => {
   useSyncExternalStore(
     (listener) => store.subscribe(listener),
+    () => store.state,
     () => store.state
   );
 };
