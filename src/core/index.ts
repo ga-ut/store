@@ -17,6 +17,11 @@ export class Store<T extends object> {
     });
   }
 
+  subscribe(listener: Listener): Listener {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
   private notify() {
     this.listeners.forEach((listener) => listener());
   }
@@ -54,10 +59,5 @@ export class Store<T extends object> {
     }
 
     return true;
-  }
-
-  subscribe(listener: Listener): Listener {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
   }
 }

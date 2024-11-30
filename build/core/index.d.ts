@@ -6,9 +6,9 @@ export declare class Store<T extends object> {
     state: StoreState<T>;
     private listeners;
     constructor(state: StoreState<T>);
+    subscribe(listener: Listener): Listener;
     private notify;
     private createNotifier;
     private shallowCompare;
-    subscribe(listener: Listener): Listener;
 }
 export {};

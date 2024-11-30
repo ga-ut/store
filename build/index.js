@@ -38,6 +38,10 @@ var Store = class {
       }
     });
   }
+  subscribe(listener) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
   notify() {
     this.listeners.forEach((listener) => listener());
   }
@@ -66,18 +70,14 @@ var Store = class {
     }
     return true;
   }
-  subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
 };
 
 // src/react/index.ts
 var import_react = require("react");
-var useStore = (store) => {
+function useStore(store) {
   (0, import_react.useSyncExternalStore)(
     (listener) => store.subscribe(listener),
     () => store.state,
     () => store.state
   );
-};
+}

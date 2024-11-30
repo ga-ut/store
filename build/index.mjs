@@ -13,6 +13,10 @@ var Store = class {
       }
     });
   }
+  subscribe(listener) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
   notify() {
     this.listeners.forEach((listener) => listener());
   }
@@ -41,21 +45,17 @@ var Store = class {
     }
     return true;
   }
-  subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
 };
 
 // src/react/index.ts
 import { useSyncExternalStore } from "react";
-var useStore = (store) => {
+function useStore(store) {
   useSyncExternalStore(
     (listener) => store.subscribe(listener),
     () => store.state,
     () => store.state
   );
-};
+}
 export {
   Store,
   useStore
