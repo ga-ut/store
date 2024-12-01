@@ -7,6 +7,7 @@ import { useStore } from '../src/react';
 
 const countStore = new Store({
   count: 1,
+  dummy: 0,
   nope() {
     this.count = this.count;
   },
@@ -15,6 +16,9 @@ const countStore = new Store({
   },
   dec() {
     this.count -= 1;
+  },
+  dummyInc() {
+    this.dummy += 1;
   }
 });
 
@@ -69,7 +73,7 @@ test('Shallow state change test', async () => {
   let nopeBtnRender = 0;
 
   function Count() {
-    useStore(countStore);
+    useStore(countStore, ['count']);
     countRender++;
     return countStore.state.count;
   }
@@ -90,4 +94,38 @@ test('Shallow state change test', async () => {
 
   expect(countRender).toBe(1);
   expect(nopeBtnRender).toBe(1);
+});
+
+test('Bound from key test', async () => {
+  let countRender = 0;
+  let dummyRender = 0;
+
+  function Count() {
+    useStore(countStore, ['count']);
+    countRender++;
+    return (
+      <>
+        {countStore.state.count}
+        <Dummy />
+        <button onClick={countStore.state.dummyInc}>+</button>
+      </>
+    );
+  }
+
+  function Dummy() {
+    useStore(countStore, ['dummy']);
+    dummyRender++;
+    return countStore.state.dummy;
+  }
+
+  render(
+    <>
+      <Count />
+    </>
+  );
+
+  await userEvent.click(screen.getByRole('button', { name: '+' }));
+
+  expect(countRender).toBe(1);
+  expect(dummyRender).toBe(2);
 });

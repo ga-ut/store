@@ -1,4 +1,7 @@
-export type Listener = () => void;
+type Listener<T> = (
+  prevState: StoreState<T>,
+  currentState: StoreState<T>
+) => void;
 
 type StoreState<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any
@@ -7,7 +10,7 @@ type StoreState<T> = {
 };
 
 export class Store<T extends object> {
-  private listeners = new Set<Listener>();
+  private listeners = new Set<Listener<T>>();
 
   constructor(public state: StoreState<T>) {
     Object.entries(this.state).forEach(([key, value]) => {
@@ -17,47 +20,48 @@ export class Store<T extends object> {
     });
   }
 
-  subscribe(listener: Listener): Listener {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+  subscribe(render: () => void, keys?: (keyof T)[]): () => void {
+    const wrapper = (prevState: StoreState<T>, currentState: StoreState<T>) => {
+      if (!this.compareFromKeys(keys, prevState, currentState)) {
+        this.state = { ...currentState };
+        render();
+      }
+    };
+    this.listeners.add(wrapper);
+    return () => this.listeners.delete(wrapper);
   }
 
-  private notify() {
-    this.listeners.forEach((listener) => listener());
+  private compareFromKeys(
+    keys: (keyof T)[] | undefined,
+    prevState: StoreState<T>,
+    currentState: StoreState<T>
+  ) {
+    if (!keys?.length) {
+      return false;
+    }
+
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      if (prevState[key] !== currentState[key]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private notify(prevState: StoreState<T>, currentState: StoreState<T>) {
+    this.listeners.forEach((listener) => listener(prevState, currentState));
   }
 
   private createNotifier(value: Function) {
     return ((...args: any[]) => {
       const prevState = { ...this.state };
       const result = value.apply(this.state, args);
-      const isEqual = this.shallowCompare(prevState, this.state);
 
-      if (!isEqual) {
-        this.state = { ...this.state };
-        this.notify();
-      }
+      this.notify(prevState, this.state);
 
       return result;
     }) as any;
-  }
-
-  private shallowCompare(
-    prevState: StoreState<T>,
-    state: StoreState<T>
-  ): boolean {
-    const prevStateKeys = Object.keys(prevState) as (keyof T)[];
-    const stateKeys = Object.keys(state) as (keyof T)[];
-
-    if (prevStateKeys.length !== stateKeys.length) {
-      return false;
-    }
-
-    for (const key of prevStateKeys) {
-      if (prevState[key] !== state[key]) {
-        return false;
-      }
-    }
-
-    return true;
   }
 }

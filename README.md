@@ -10,8 +10,28 @@ This lightweight state management solution for React applications offers efficie
 
 ## Installation
 
+## Installation Instructions
+
+You can install the `@ga-ut/store` package from the GitHub repository using the following commands:
+
 ```bash
+# npm
 npm install @ga-ut/store@https://github.com/ga-ut/store.git
+```
+
+```bash
+# Yarn
+yarn add @ga-ut/store@https://github.com/ga-ut/store.git
+```
+
+```bash
+# pnpm
+pnpm add @ga-ut/store@https://github.com/ga-ut/store.git
+```
+
+```bash
+# Bun
+bun add @ga-ut/store@https://github.com/ga-ut/store.git
 ```
 
 ## Usage
@@ -36,10 +56,40 @@ const countStore = new Store({
 
 ```jsx
 import React from 'react';
-import { useStore } from '@yourpackage/store/react';
+import { useStore } from '@ga-ut/store';
 
 function Count() {
   useStore(countStore); // Explicitly subscribe to store changes
+  return <div>{countStore.state.count}</div>;
+}
+
+function IncButton() {
+  return <button onClick={countStore.state.inc}>+</button>;
+}
+
+function DecButton() {
+  return <button onClick={countStore.state.dec}>-</button>;
+}
+
+function App() {
+  return (
+    <>
+      <Count />
+      <IncButton />
+      <DecButton />
+    </>
+  );
+}
+```
+
+### Using the Store with specific keys
+
+```jsx
+import React from 'react';
+import { useStore } from '@ga-ut/store';
+
+function Count() {
+  useStore(countStore, ['count']);
   return <div>{countStore.state.count}</div>;
 }
 

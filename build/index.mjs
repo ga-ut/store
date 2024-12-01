@@ -13,45 +13,46 @@ var Store = class {
       }
     });
   }
-  subscribe(listener) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-  notify() {
-    this.listeners.forEach((listener) => listener());
-  }
-  createNotifier(value) {
-    return (...args) => {
-      const prevState = { ...this.state };
-      const result = value.apply(this.state, args);
-      const isEqual = this.shallowCompare(prevState, this.state);
-      if (!isEqual) {
-        this.state = { ...this.state };
-        this.notify();
+  subscribe(render, keys) {
+    const wrapper = (prevState, currentState) => {
+      if (!this.compareFromKeys(keys, prevState, currentState)) {
+        this.state = { ...currentState };
+        render();
       }
-      return result;
     };
+    this.listeners.add(wrapper);
+    return () => this.listeners.delete(wrapper);
   }
-  shallowCompare(prevState, state) {
-    const prevStateKeys = Object.keys(prevState);
-    const stateKeys = Object.keys(state);
-    if (prevStateKeys.length !== stateKeys.length) {
+  compareFromKeys(keys, prevState, currentState) {
+    if (!(keys == null ? void 0 : keys.length)) {
       return false;
     }
-    for (const key of prevStateKeys) {
-      if (prevState[key] !== state[key]) {
+    for (let i = 0; i < keys.length; ++i) {
+      const key = keys[i];
+      if (prevState[key] !== currentState[key]) {
         return false;
       }
     }
     return true;
   }
+  notify(prevState, currentState) {
+    this.listeners.forEach((listener) => listener(prevState, currentState));
+  }
+  createNotifier(value) {
+    return (...args) => {
+      const prevState = { ...this.state };
+      const result = value.apply(this.state, args);
+      this.notify(prevState, this.state);
+      return result;
+    };
+  }
 };
 
 // src/react/index.ts
 import { useSyncExternalStore } from "react";
-function useStore(store) {
+function useStore(store, key) {
   useSyncExternalStore(
-    (listener) => store.subscribe(listener),
+    (render) => store.subscribe(render, key),
     () => store.state,
     () => store.state
   );
