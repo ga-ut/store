@@ -4,8 +4,11 @@ type Listener<T> = (
 ) => void;
 
 type StoreState<T> = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any
-    ? (this: T, ...args: Parameters<T[K]>) => ReturnType<T[K]>
+  readonly [K in keyof T]: T[K] extends (...args: any[]) => any
+    ? (
+        this: { -readonly [P in keyof T]: T[P] },
+        ...args: Parameters<T[K]>
+      ) => ReturnType<T[K]>
     : T[K];
 };
 
@@ -15,7 +18,7 @@ export class Store<T extends object> {
   constructor(public state: StoreState<T>) {
     Object.entries(this.state).forEach(([key, value]) => {
       if (typeof value === 'function') {
-        this.state[key as keyof T] = this.createNotifier(value);
+        Object.assign(this.state, { [key]: this.createNotifier(value) });
       }
     });
   }

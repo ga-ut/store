@@ -34,7 +34,7 @@ var Store = class {
     __publicField(this, "listeners", /* @__PURE__ */ new Set());
     Object.entries(this.state).forEach(([key, value]) => {
       if (typeof value === "function") {
-        this.state[key] = this.createNotifier(value);
+        Object.assign(this.state, { [key]: this.createNotifier(value) });
       }
     });
   }
