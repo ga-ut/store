@@ -1,33 +1,37 @@
 # ga-ut/store
+
 Lightweight React State Management with Store
 
 ## Installation
+
 You can install the `@ga-ut/store` package from the GitHub repository using the following commands:
 
 ```bash
 # npm
-npm install @ga-ut/store@https://github.com/ga-ut/store.git
+npm install @ga-ut/store
 ```
 
 ```bash
 # Yarn
-yarn add @ga-ut/store@https://github.com/ga-ut/store.git
+yarn add @ga-ut/store
 ```
 
 ```bash
 # pnpm
-pnpm add @ga-ut/store@https://github.com/ga-ut/store.git
+pnpm add @ga-ut/store
 ```
 
 ```bash
 # Bun
-bun add @ga-ut/store@https://github.com/ga-ut/store.git
+bun add @ga-ut/store
 ```
 
 ## Features
+
 This lightweight state management solution for React applications offers convenient syntax, type safety, and optimized rendering control. Here's an overview of its key features:
 
 ### Convenient Syntax
+
 Creating and using a store is straightforward, with no need for separate setters. Simply assign values to this within the store, and pass the store to components that need rendering.
 
 Example:
@@ -58,6 +62,7 @@ function Counter() {
 ```
 
 ### Type Safety
+
 The store's state can only be manipulated within the store itself, thanks to TypeScript type settings. Attempting to directly assign values from outside the store will result in TypeScript errors, ensuring safer maintenance of global state.
 
 Example:
@@ -75,9 +80,11 @@ countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a r
 ```
 
 ### Rendering Optimization
+
 You can optimize rendering by specifying which store keys should trigger re-renders. This is optional; if not specified, any internal function call will cause a full re-render.
 
 Example:
+
 ```tsx
 function Counter() {
   // Only re-render when 'count' changes

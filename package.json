@@ -1,14 +1,26 @@
 {
   "name": "@ga-ut/store",
   "version": "1.0.0",
-  "description": "",
+  "description": "Lightweight React State Management with Store",
+  "private": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "homepage": "https://github.com/ga-ut/store",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ga-ut/store.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ga-ut/store/issues"
+  },
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "type": "commonjs",
   "author": "ga-ut",
   "scripts": {
-    "build": "node build",
-    "pre-push": "npm run build && git add build && git commit --amend --no-edit"
+    "build": "node build"
   },
   "exports": {
     ".": {
