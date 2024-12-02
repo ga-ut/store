@@ -1,17 +1,7 @@
-# Lightweight React State Management with Store
-
-This lightweight state management solution for React applications offers efficient rendering control and easy integration. The key feature is the explicit declaration of `useStore` in components that need to react to state changes.
-
-## Features
-
-- Minimal setup and easy to use
-- Efficient rendering - only components that explicitly subscribe to the store are re-rendered
-- TypeScript support with proper type inference
+# ga-ut/store
+Lightweight React State Management with Store
 
 ## Installation
-
-## Installation Instructions
-
 You can install the `@ga-ut/store` package from the GitHub repository using the following commands:
 
 ```bash
@@ -34,120 +24,76 @@ pnpm add @ga-ut/store@https://github.com/ga-ut/store.git
 bun add @ga-ut/store@https://github.com/ga-ut/store.git
 ```
 
-## Usage
+## Features
+This lightweight state management solution for React applications offers convenient syntax, type safety, and optimized rendering control. Here's an overview of its key features:
 
-### Creating a Store
+### Convenient Syntax
+Creating and using a store is straightforward, with no need for separate setters. Simply assign values to this within the store, and pass the store to components that need rendering.
+
+Example:
 
 ```typescript
 import { Store } from '@ga-ut/store';
 
 const countStore = new Store({
-  count: 1,
-  inc() {
+  count: 0,
+  increment() {
     this.count += 1;
   },
-  dec() {
+  decrement() {
     this.count -= 1;
   }
 });
-```
 
-### Using the Store in React Components
-
-```jsx
-import React from 'react';
-import { useStore } from '@ga-ut/store';
-
-function Count() {
-  useStore(countStore); // Explicitly subscribe to store changes
-  return <div>{countStore.state.count}</div>;
-}
-
-function IncButton() {
-  return <button onClick={countStore.state.inc}>+</button>;
-}
-
-function DecButton() {
-  return <button onClick={countStore.state.dec}>-</button>;
-}
-
-function App() {
+function Counter() {
+  useStore(countStore);
   return (
-    <>
-      <Count />
-      <IncButton />
-      <DecButton />
-    </>
+    <div>
+      <p>Count: {countStore.state.count}</p>
+      <button onClick={countStore.state.increment}>+</button>
+      <button onClick={countStore.state.decrement}>-</button>
+    </div>
   );
 }
 ```
 
-### Using the Store with specific keys
+### Type Safety
+The store's state can only be manipulated within the store itself, thanks to TypeScript type settings. Attempting to directly assign values from outside the store will result in TypeScript errors, ensuring safer maintenance of global state.
 
-```jsx
-import React from 'react';
-import { useStore } from '@ga-ut/store';
-
-function Count() {
-  useStore(countStore, ['count']);
-  return <div>{countStore.state.count}</div>;
-}
-
-function IncButton() {
-  return <button onClick={countStore.state.inc}>+</button>;
-}
-
-function DecButton() {
-  return <button onClick={countStore.state.dec}>-</button>;
-}
-
-function App() {
-  return (
-    <>
-      <Count />
-      <IncButton />
-      <DecButton />
-    </>
-  );
-}
-```
-
-## Key Points
-
-1. **Explicit Subscription**: Components that need to re-render on state changes must use the `useStore` hook. This allows for fine-grained control over which components re-render.
-
-2. **Efficient Rendering**: Only components that use `useStore` will re-render when the store's state changes. This can lead to better performance in larger applications.
-
-3. **Simple API**: The store is created with a simple object, and methods can directly modify the state.
-
-4. **TypeScript Support**: The store and its methods are fully typed, providing excellent developer experience with autocompletion and type checking.
-
-## Advanced Usage
-
-### Shallow State Change Detection
-
-The store implements shallow state change detection. This means that if a method doesn't actually change the state (like the `nope` method in the test), subscribed components won't re-render.
+Example:
 
 ```typescript
 const countStore = new Store({
-  count: 1,
-  nope() {
-    this.count = this.count; // This won't trigger a re-render
+  count: 0,
+  increment() {
+    this.count += 1; // This is allowed
   }
 });
+
+// This will cause a TypeScript error
+countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a read-only property.
 ```
 
-## Testing
+### Rendering Optimization
+You can optimize rendering by specifying which store keys should trigger re-renders. This is optional; if not specified, any internal function call will cause a full re-render.
 
-The library is designed with testability in mind. You can easily test components that use the store:
+Example:
+```typescript
+function Counter() {
+  // Only re-render when 'count' changes
+  useStore(countStore, ['count']);
+  return <p>Count: {countStore.state.count}</p>;
+}
 
-```jsx
-test('Count increments correctly', async () => {
-  render(<App />);
-  expect(screen.getByText('1')).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-  expect(screen.getByText('2')).toBeInTheDocument();
-});
+function Controls() {
+  // This component won't re-render on state changes
+  return (
+    <div>
+      <button onClick={countStore.state.increment}>+</button>
+      <button onClick={countStore.state.decrement}>-</button>
+    </div>
+  );
+}
 ```
 
 For more detailed examples and API documentation, please refer to the source code and test files.
