@@ -65,6 +65,5 @@
     "global",
     "store"
   ],
-  "sideEffects": false,
-  "packageManager": "yarn@4.5.2"
+  "sideEffects": false
 }
