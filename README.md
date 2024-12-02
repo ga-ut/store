@@ -32,7 +32,7 @@ Creating and using a store is straightforward, with no need for separate setters
 
 Example:
 
-```typescript
+```tsx
 import { Store } from '@ga-ut/store';
 
 const countStore = new Store({
@@ -62,7 +62,7 @@ The store's state can only be manipulated within the store itself, thanks to Typ
 
 Example:
 
-```typescript
+```tsx
 const countStore = new Store({
   count: 0,
   increment() {
@@ -78,7 +78,7 @@ countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a r
 You can optimize rendering by specifying which store keys should trigger re-renders. This is optional; if not specified, any internal function call will cause a full re-render.
 
 Example:
-```typescript
+```tsx
 function Counter() {
   // Only re-render when 'count' changes
   useStore(countStore, ['count']);
