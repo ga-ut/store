@@ -1,1 +1,10 @@
 node_modules
+.vscode
+tests
+pnpm-lock.yaml
+prettier.config.js
+eslint.config.js
+build.js
+tsconfig.json
+vitest.config.ts
+.gitignore
