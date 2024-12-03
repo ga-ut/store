@@ -37,7 +37,7 @@ Creating and using a store is straightforward, with no need for separate setters
 Example:
 
 ```tsx
-import { Store } from '@ga-ut/store';
+import { Store, useStore } from '@ga-ut/store';
 
 const countStore = new Store({
   count: 0,
