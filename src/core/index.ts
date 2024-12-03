@@ -6,7 +6,11 @@ type Listener<T> = (
 type StoreState<T> = {
   readonly [K in keyof T]: T[K] extends (...args: any[]) => any
     ? (
-        this: { -readonly [P in keyof T]: T[P] },
+        this: {
+          -readonly [P in keyof T as T[P] extends (...args: any[]) => any
+            ? never
+            : P]: T[P];
+        },
         ...args: Parameters<T[K]>
       ) => ReturnType<T[K]>
     : T[K];
