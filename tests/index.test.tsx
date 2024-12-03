@@ -38,9 +38,9 @@ test('Just count rendered', async () => {
   }
 
   function Count() {
-    useStore(countStore);
+    const { count } = useStore(countStore);
     countRender++;
-    return countStore.state.count;
+    return count;
   }
 
   function IncBtn() {
@@ -73,14 +73,15 @@ test('Shallow state change test', async () => {
   let nopeBtnRender = 0;
 
   function Count() {
-    useStore(countStore, ['count']);
+    const { count } = useStore(countStore, ['count']);
     countRender++;
-    return countStore.state.count;
+    return count;
   }
 
   function NopeBtn() {
+    const { nope } = useStore(countStore, ['nope']);
     nopeBtnRender++;
-    return <button onClick={countStore.state.nope}>nope</button>;
+    return <button onClick={nope}>nope</button>;
   }
 
   render(
@@ -101,11 +102,11 @@ test('Bound from key test', async () => {
   let dummyRender = 0;
 
   function Count() {
-    useStore(countStore, ['count']);
+    const { count } = useStore(countStore, ['count']);
     countRender++;
     return (
       <>
-        {countStore.state.count}
+        {count}
         <Dummy />
         <button onClick={countStore.state.dummyInc}>+</button>
       </>
@@ -113,9 +114,9 @@ test('Bound from key test', async () => {
   }
 
   function Dummy() {
-    useStore(countStore, ['dummy']);
+    const { dummy } = useStore(countStore, ['dummy']);
     dummyRender++;
-    return countStore.state.dummy;
+    return dummy;
   }
 
   render(
