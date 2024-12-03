@@ -50,12 +50,12 @@ const countStore = new Store({
 });
 
 function Counter() {
-  useStore(countStore);
+  const { count, increment, decrement } = useStore(countStore);
   return (
     <div>
-      <p>Count: {countStore.state.count}</p>
-      <button onClick={countStore.state.increment}>+</button>
-      <button onClick={countStore.state.decrement}>-</button>
+      <p>Count: {count}</p>
+      <button onClick={increment}>+</button>
+      <button onClick={decrement}>-</button>
     </div>
   );
 }
@@ -72,8 +72,24 @@ const countStore = new Store({
   count: 0,
   increment() {
     this.count += 1; // This is allowed
-  }
+  },
+  reset() {
+    // this.increment(); // This will cause a TypeScript error if uncommented
+    // Function properties cannot be accessed here
+  },
 });
+
+function Counter() {
+  // Attempting to destructure 'increment' will result in a TypeScript error
+  // because it is not included in the dependency array.
+  const { increment } = useStore(countStore, ['count']); // Only 'count' is specified
+
+  return (
+    <div>
+      <button onClick={increment}>Increment</button>
+    </div>
+  );
+}
 
 // This will cause a TypeScript error
 countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a read-only property.
@@ -88,8 +104,8 @@ Example:
 ```tsx
 function Counter() {
   // Only re-render when 'count' changes
-  useStore(countStore, ['count']);
-  return <p>Count: {countStore.state.count}</p>;
+  const { count } = useStore(countStore, ['count']);
+  return <p>Count: {count}</p>;
 }
 
 function Controls() {
