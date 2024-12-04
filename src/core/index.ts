@@ -1,7 +1,4 @@
-type Listener<T> = (
-  prevState: StoreState<T>,
-  currentState: StoreState<T>
-) => void;
+type Listener<T> = (prevState: StoreState<T>, result: any) => void;
 
 type StoreState<T> = {
   readonly [K in keyof T]: T[K] extends (...args: any[]) => any
@@ -12,7 +9,7 @@ type StoreState<T> = {
             : P]: T[P];
         },
         ...args: Parameters<T[K]>
-      ) => ReturnType<T[K]>
+      ) => Exclude<ReturnType<T[K]>, undefined>
     : T[K];
 };
 
@@ -28,9 +25,12 @@ export class Store<T extends object> {
   }
 
   subscribe(render: () => void, keys?: (keyof T)[]): () => void {
-    const wrapper = (prevState: StoreState<T>, currentState: StoreState<T>) => {
-      if (!this.compareFromKeys(keys, prevState, currentState)) {
-        this.state = { ...currentState };
+    const wrapper: Listener<T> = (prevState, result) => {
+      if (
+        result === undefined &&
+        !this.compareFromKeys(keys, prevState, this.state)
+      ) {
+        this.state = { ...this.state };
         render();
       }
     };
@@ -57,8 +57,8 @@ export class Store<T extends object> {
     return true;
   }
 
-  private notify(prevState: StoreState<T>, currentState: StoreState<T>) {
-    this.listeners.forEach((listener) => listener(prevState, currentState));
+  private notify(prevState: StoreState<T>, result: any) {
+    this.listeners.forEach((listener) => listener(prevState, result));
   }
 
   private createNotifier(value: Function) {
@@ -66,7 +66,7 @@ export class Store<T extends object> {
       const prevState = { ...this.state };
       const result = value.apply(this.state, args);
 
-      this.notify(prevState, this.state);
+      this.notify(prevState, result);
 
       return result;
     }) as any;

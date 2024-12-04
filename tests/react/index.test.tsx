@@ -323,3 +323,38 @@ test('Map value test', async () => {
 
   expect(renderCount).toBe(2);
 });
+
+test('Do not infinite render in get function', async () => {
+  const store = new Store({
+    numbers: [0, 1, 2],
+    getMax() {
+      return Math.max(...this.numbers);
+    },
+    addNumber() {
+      this.numbers = [...this.numbers, 3];
+    }
+  });
+
+  let renderCount = 0;
+  function Test() {
+    const { getMax, addNumber } = useStore(store);
+    renderCount++;
+
+    return (
+      <>
+        <span>{getMax()}</span>
+        <button onClick={addNumber}>+</button>
+      </>
+    );
+  }
+
+  render(<Test />);
+
+  expect(renderCount).toBe(1);
+
+  await userEvent.click(screen.getByRole('button', { name: '+' }));
+
+  expect(renderCount).toBe(2);
+
+  screen.getByText('3');
+});
