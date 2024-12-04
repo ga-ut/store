@@ -1,6 +1,6 @@
 {
   "name": "@ga-ut/store",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Lightweight React State Management with Store",
   "private": false,
   "publishConfig": {
@@ -20,7 +20,7 @@
   "type": "commonjs",
   "author": "ga-ut",
   "scripts": {
-    "publish": "node build && npm publish"
+    "deploy": "node build && npm publish"
   },
   "exports": {
     ".": {
