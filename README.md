@@ -76,7 +76,7 @@ const countStore = new Store({
   reset() {
     // this.increment(); // This will cause a TypeScript error if uncommented
     // Function properties cannot be accessed here
-  },
+  }
 });
 
 function Counter() {
@@ -115,6 +115,57 @@ function Controls() {
       <button onClick={countStore.state.increment}>+</button>
       <button onClick={countStore.state.decrement}>-</button>
     </div>
+  );
+}
+```
+
+### Using Immer for Immutable Updates
+
+@ga-ut/store can be seamlessly integrated with Immer to handle immutable updates of complex state structures. This is particularly useful when dealing with nested objects or collections.
+
+Example:
+
+```jsx
+import { Store, useStore } from '@ga-ut/store';
+import { produce } from 'immer';
+
+const personStore = new Store({
+  name: 'Alice',
+  age: 25,
+  address: {
+    city: 'New York',
+    zip: '10001'
+  },
+  contact: {
+    email: 'alice@example.com',
+    phone: '123-456-7890'
+  },
+  updateUserProfile(newCity: string, newPhone: string) {
+    this.address = produce(this.address, (draft) => {
+      draft.city = newCity;
+    });
+
+    this.contact = produce(this.contact, (draft) => {
+      draft.phone = newPhone;
+    });
+  }
+});
+
+function UserProfile() {
+  const { address, contact, updateUserProfile } = useStore(personStore, [
+    'address',
+    'contact',
+    'updateUserProfile'
+  ]);
+
+  return (
+    <>
+      <span>{address.city}</span>
+      <span>{contact.phone}</span>
+      <button onClick={() => updateUserProfile('Seoul', '012-345-6789')}>
+        Update Profile
+      </button>
+    </>
   );
 }
 ```
