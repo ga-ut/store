@@ -76,13 +76,13 @@ test('Shallow state change test', async () => {
   let nopeBtnRender = 0;
 
   function Count() {
-    const { count } = useStore(countStore, ['count']);
+    const { count } = useStore(countStore);
     countRender++;
     return count;
   }
 
   function NopeBtn() {
-    const { nope } = useStore(countStore, ['nope']);
+    const { nope } = useStore(countStore);
     nopeBtnRender++;
     return <button onClick={nope}>nope</button>;
   }
@@ -105,7 +105,7 @@ test('Bound from key test', async () => {
   let dummyRender = 0;
 
   function Count() {
-    const { count } = useStore(countStore, ['count']);
+    const { count } = useStore(countStore);
     countRender++;
     return (
       <>
@@ -117,7 +117,7 @@ test('Bound from key test', async () => {
   }
 
   function Dummy() {
-    const { dummy } = useStore(countStore, ['dummy']);
+    const { dummy } = useStore(countStore);
     dummyRender++;
     return dummy;
   }
@@ -128,9 +128,10 @@ test('Bound from key test', async () => {
     </>
   );
 
+  expect(countRender).toBe(1);
+
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
-  expect(countRender).toBe(1);
   expect(dummyRender).toBe(2);
 });
 
@@ -159,11 +160,7 @@ test('Object value test with immer', async () => {
 
   let renderCount = 0;
   function Test() {
-    const { address, contact, updateUserProfile } = useStore(personStore, [
-      'address',
-      'contact',
-      'updateUserProfile'
-    ]);
+    const { address, contact, updateUserProfile } = useStore(personStore);
     renderCount++;
 
     return (
@@ -246,7 +243,7 @@ test('Set value test', async () => {
 
   let renderCount = 0;
   function Test() {
-    const { numbers, add } = useStore(store, ['numbers', 'add']);
+    const { numbers, add } = useStore(store);
     renderCount++;
 
     return (
@@ -296,7 +293,7 @@ test('Map value test', async () => {
 
   let renderCount = 0;
   function Test() {
-    const { building, setAge } = useStore(store, ['building', 'setAge']);
+    const { building, setAge } = useStore(store);
     renderCount++;
 
     return (
@@ -325,6 +322,41 @@ test('Map value test', async () => {
 });
 
 test('Do not infinite render in get function', async () => {
+  const store = new Store({
+    numbers: [0, 1, 2],
+    getMax() {
+      return Math.max(...this.numbers);
+    },
+    addNumber() {
+      this.numbers = [...this.numbers, 3];
+    }
+  });
+
+  let renderCount = 0;
+  function Test() {
+    const { getMax, addNumber } = useStore(store);
+    renderCount++;
+
+    return (
+      <>
+        <span>{getMax()}</span>
+        <button onClick={addNumber}>+</button>
+      </>
+    );
+  }
+
+  render(<Test />);
+
+  expect(renderCount).toBe(1);
+
+  await userEvent.click(screen.getByRole('button', { name: '+' }));
+
+  expect(renderCount).toBe(2);
+
+  screen.getByText('3');
+});
+
+test('Do render when get function return value change', async () => {
   const store = new Store({
     numbers: [0, 1, 2],
     getMax() {

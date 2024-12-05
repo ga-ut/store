@@ -1,4 +1,4 @@
-type Listener<T> = (prevState: StoreState<T>, result: any) => void;
+type Listener<T> = (prevState: StoreState<T>, key: keyof T) => void;
 
 type StoreState<T> = {
   readonly [K in keyof T]: T[K] extends (...args: any[]) => any
@@ -15,21 +15,21 @@ type StoreState<T> = {
 
 export class Store<T extends object> {
   private listeners = new Set<Listener<T>>();
+  private dependencies = new Map<keyof T, Set<keyof T>>();
 
   constructor(public state: StoreState<T>) {
     Object.entries(this.state).forEach(([key, value]) => {
       if (typeof value === 'function') {
-        Object.assign(this.state, { [key]: this.createNotifier(value) });
+        Object.assign(this.state, {
+          [key]: this.createNotifier(key as keyof T, value)
+        });
       }
     });
   }
 
-  subscribe(render: () => void, keys?: (keyof T)[]): () => void {
-    const wrapper: Listener<T> = (prevState, result) => {
-      if (
-        result === undefined &&
-        !this.compareFromKeys(keys, prevState, this.state)
-      ) {
+  subscribe(render: () => void): () => void {
+    const wrapper: Listener<T> = (prevState, key) => {
+      if (this.validateRender(prevState, this.state, key)) {
         this.state = { ...this.state };
         render();
       }
@@ -38,35 +38,53 @@ export class Store<T extends object> {
     return () => this.listeners.delete(wrapper);
   }
 
-  private compareFromKeys(
-    keys: (keyof T)[] | undefined,
+  private validateRender(
     prevState: StoreState<T>,
-    currentState: StoreState<T>
+    currentState: StoreState<T>,
+    key: keyof T
   ) {
-    if (!keys?.length) {
-      return false;
-    }
+    if (typeof currentState[key] === 'function') {
+      const dependencies = this.dependencies.get(key);
 
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i];
+      if (dependencies) {
+        for (const dep of dependencies) {
+          if (prevState[dep] !== currentState[dep]) {
+            return true;
+          }
+        }
+      }
+    } else {
       if (prevState[key] !== currentState[key]) {
-        return false;
+        return true;
       }
     }
-
-    return true;
+    return false;
   }
 
-  private notify(prevState: StoreState<T>, result: any) {
-    this.listeners.forEach((listener) => listener(prevState, result));
+  private notify(prevState: StoreState<T>, key: keyof T) {
+    this.listeners.forEach((listener) => listener(prevState, key));
   }
 
-  private createNotifier(value: Function) {
+  private createNotifier(key: keyof T, value: Function) {
     return ((...args: any[]) => {
       const prevState = { ...this.state };
-      const result = value.apply(this.state, args);
 
-      this.notify(prevState, result);
+      const accessedKeys = new Set<keyof T>();
+
+      const proxy = new Proxy(this.state, {
+        get(target, key) {
+          accessedKeys.add(key as keyof T);
+          return target[key as keyof T];
+        }
+      });
+
+      const result = value.apply(proxy, args);
+
+      if (accessedKeys.size > 0) {
+        this.dependencies.set(key, accessedKeys);
+      }
+
+      this.notify(prevState, key);
 
       return result;
     }) as any;

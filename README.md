@@ -97,19 +97,19 @@ countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a r
 
 ### Rendering Optimization
 
-You can optimize rendering by specifying which store keys should trigger re-renders. This is optional; if not specified, any internal function call will cause a full re-render.
+The store automatically optimizes rendering performance. Components will only re-render when their specifically accessed store values change, ensuring efficient updates without manual optimization.
 
 Example:
 
 ```tsx
 function Counter() {
-  // Only re-render when 'count' changes
-  const { count } = useStore(countStore, ['count']);
+  // Automatically re-renders only when 'count' changes
+  const { count } = useStore(countStore);
   return <p>Count: {count}</p>;
 }
 
 function Controls() {
-  // This component won't re-render on state changes
+  // This component won't re-render on state changes since it only uses actions
   return (
     <div>
       <button onClick={countStore.state.increment}>+</button>
@@ -152,11 +152,7 @@ const personStore = new Store({
 });
 
 function UserProfile() {
-  const { address, contact, updateUserProfile } = useStore(personStore, [
-    'address',
-    'contact',
-    'updateUserProfile'
-  ]);
+  const { address, contact, updateUserProfile } = useStore(personStore);
 
   return (
     <>
