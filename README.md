@@ -79,18 +79,6 @@ const countStore = new Store({
   }
 });
 
-function Counter() {
-  // Attempting to destructure 'increment' will result in a TypeScript error
-  // because it is not included in the dependency array.
-  const { increment } = useStore(countStore, ['count']); // Only 'count' is specified
-
-  return (
-    <div>
-      <button onClick={increment}>Increment</button>
-    </div>
-  );
-}
-
 // This will cause a TypeScript error
 countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a read-only property.
 ```
