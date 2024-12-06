@@ -1,9 +1,9 @@
 import React from 'react';
 import { describe, expect, test } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
+import { render, screen, act } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { enableMapSet, produce } from 'immer';
-import { Store } from '../../src';
+import { Store } from '../../src/core';
 import { useStore } from '../../src/react';
 
 enableMapSet();
@@ -306,6 +306,162 @@ describe('Store with React Integration', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Update' }));
       expect(renderCount).toBe(2);
       screen.getByText('30');
+
+      unmount();
+    });
+  });
+
+  describe('Error Cases and Edge Scenarios', () => {
+    test('should handle rapid state updates without memory leaks', async () => {
+      const rapidStore = new Store({
+        count: 0,
+        increment() {
+          this.count += 1;
+        }
+      });
+
+      let renderCount = 0;
+      function RapidCounter() {
+        const { count } = useStore(rapidStore);
+        renderCount++;
+        return <div>{count}</div>;
+      }
+
+      const { unmount } = render(<RapidCounter />);
+      expect(renderCount).toBe(1);
+
+      act(() => {
+        for (let i = 0; i < 1000; i++) {
+          rapidStore.getState().increment();
+        }
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(renderCount).toBeLessThan(50);
+      expect(rapidStore.getState().count).toBe(1000);
+
+      unmount();
+    });
+
+    test('should handle circular references', () => {
+      const circularStore = new Store({
+        obj: {} as any,
+        setCircular() {
+          this.obj.self = this.obj;
+        }
+      });
+
+      let renderCount = 0;
+
+      function CircularComponent() {
+        const { obj } = useStore(circularStore);
+        renderCount++;
+        return <div>{obj ? 'has obj' : 'no obj'}</div>;
+      }
+
+      const { unmount } = render(<CircularComponent />);
+      expect(renderCount).toBe(1);
+
+      expect(() => {
+        act(() => {
+          circularStore.getState().setCircular();
+        });
+      }).not.toThrow();
+
+      unmount();
+    });
+
+    test('should handle null and undefined values', () => {
+      const nullableStore = new Store({
+        value: 'initial' as string | null | undefined,
+        setNull() {
+          this.value = null;
+        },
+        setUndefined() {
+          this.value = undefined;
+        }
+      });
+
+      let renderCount = 0;
+
+      function NullableComponent() {
+        const { value } = useStore(nullableStore);
+        renderCount++;
+        return (
+          <div data-testid="value">
+            {value === null
+              ? 'null'
+              : value === undefined
+                ? 'undefined'
+                : value}
+          </div>
+        );
+      }
+
+      const { unmount } = render(<NullableComponent />);
+      expect(renderCount).toBe(1);
+      expect(screen.getByTestId('value')).toHaveTextContent('initial');
+
+      act(() => {
+        nullableStore.getState().setNull();
+      });
+      expect(screen.getByTestId('value')).toHaveTextContent('null');
+
+      act(() => {
+        nullableStore.getState().setUndefined();
+      });
+      expect(screen.getByTestId('value')).toHaveTextContent('undefined');
+
+      unmount();
+    });
+
+    test('should handle concurrent updates from multiple components', async () => {
+      const sharedStore = new Store({
+        count: 0,
+        increment() {
+          this.count += 1;
+        }
+      });
+
+      let render1Count = 0;
+      let render2Count = 0;
+
+      function Counter1() {
+        const { count, increment } = useStore(sharedStore);
+        render1Count++;
+        return <button onClick={increment}>Counter1: {count}</button>;
+      }
+
+      function Counter2() {
+        const { count } = useStore(sharedStore);
+        render2Count++;
+        return <div>Counter2: {count}</div>;
+      }
+
+      const { unmount } = render(
+        <>
+          <Counter1 />
+          <Counter2 />
+        </>
+      );
+
+      expect(render1Count).toBe(1);
+      expect(render2Count).toBe(1);
+
+      await act(async () => {
+        await Promise.all([
+          sharedStore.getState().increment(),
+          sharedStore.getState().increment(),
+          sharedStore.getState().increment()
+        ]);
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(sharedStore.getState().count).toBe(3);
+      expect(render1Count).toBeGreaterThan(1);
+      expect(render2Count).toBeGreaterThan(1);
 
       unmount();
     });

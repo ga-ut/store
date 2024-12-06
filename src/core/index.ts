@@ -133,6 +133,11 @@ export class Store<T extends object> {
         get: (target, key) => {
           modifiedKeys.add(key as keyof T);
           return target[key as keyof T];
+        },
+        set: (target, key, value) => {
+          Object.assign(target, { [key]: value });
+          modifiedKeys.add(key as keyof T);
+          return true;
         }
       });
 
