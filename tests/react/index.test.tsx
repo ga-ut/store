@@ -11,6 +11,7 @@ enableMapSet();
 const countStore = new Store({
   count: 1,
   dummy: 0,
+  test: 0,
   nope() {
     this.count = this.count;
   },
@@ -48,15 +49,15 @@ test('Just count rendered', async () => {
 
   function IncBtn() {
     incBtnRender++;
-    return <button onClick={countStore.state.inc}>+</button>;
+    return <button onClick={countStore.getState().inc}>+</button>;
   }
 
   function DecBtn() {
     decBtnRender++;
-    return <button onClick={countStore.state.dec}>-</button>;
+    return <button onClick={countStore.getState().dec}>-</button>;
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   expect(countRender).toBe(1);
   expect(incBtnRender).toBe(1);
@@ -69,6 +70,8 @@ test('Just count rendered', async () => {
   expect(decBtnRender).toBe(1);
 
   screen.getByText('2');
+
+  unmount();
 });
 
 test('Shallow state change test', async () => {
@@ -87,7 +90,7 @@ test('Shallow state change test', async () => {
     return <button onClick={nope}>nope</button>;
   }
 
-  render(
+  const { unmount } = render(
     <>
       <Count />
       <NopeBtn />
@@ -98,6 +101,8 @@ test('Shallow state change test', async () => {
 
   expect(countRender).toBe(1);
   expect(nopeBtnRender).toBe(1);
+
+  unmount();
 });
 
 test('Bound from key test', async () => {
@@ -110,8 +115,7 @@ test('Bound from key test', async () => {
     return (
       <>
         {count}
-        <Dummy />
-        <button onClick={countStore.state.dummyInc}>+</button>
+        <button onClick={countStore.getState().dummyInc}>+</button>
       </>
     );
   }
@@ -119,11 +123,17 @@ test('Bound from key test', async () => {
   function Dummy() {
     const { dummy } = useStore(countStore);
     dummyRender++;
-    return dummy;
+    return (
+      <>
+        {dummy}
+        <button onClick={countStore.getState().inc}>add</button>
+      </>
+    );
   }
 
-  render(
+  const { unmount } = render(
     <>
+      <Dummy />
       <Count />
     </>
   );
@@ -132,7 +142,15 @@ test('Bound from key test', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
+  expect(countRender).toBe(1);
   expect(dummyRender).toBe(2);
+
+  await userEvent.click(screen.getByRole('button', { name: 'add' }));
+
+  expect(countRender).toBe(2);
+  expect(dummyRender).toBe(2);
+
+  unmount();
 });
 
 test('Object value test with immer', async () => {
@@ -174,7 +192,7 @@ test('Object value test with immer', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   screen.getByText('New York');
   screen.getByText('123-456-7890');
@@ -187,6 +205,8 @@ test('Object value test with immer', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: 'update' }));
   expect(renderCount).toBe(2);
+
+  unmount();
 });
 
 test('Array value test', async () => {
@@ -212,7 +232,7 @@ test('Array value test', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   screen.getByText('0');
 
@@ -223,6 +243,8 @@ test('Array value test', async () => {
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
   screen.getByText('2');
+
+  unmount();
 });
 
 test('Set value test', async () => {
@@ -256,7 +278,7 @@ test('Set value test', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   screen.getByText('0');
 
@@ -268,13 +290,15 @@ test('Set value test', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
-  expect(renderCount).toBe(3);
-
   screen.getByText('2');
+
+  expect(renderCount).toBe(3);
 
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
   expect(renderCount).toBe(3);
+
+  unmount();
 });
 
 test('Map value test', async () => {
@@ -306,19 +330,21 @@ test('Map value test', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   screen.getByText('10');
 
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
-  screen.getByText('20');
-
   expect(renderCount).toBe(2);
+
+  screen.getByText('20');
 
   await userEvent.click(screen.getByRole('button', { name: '+' }));
 
   expect(renderCount).toBe(2);
+
+  unmount();
 });
 
 test('Do not infinite render in get function', async () => {
@@ -345,7 +371,7 @@ test('Do not infinite render in get function', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   expect(renderCount).toBe(1);
 
@@ -354,6 +380,8 @@ test('Do not infinite render in get function', async () => {
   expect(renderCount).toBe(2);
 
   screen.getByText('3');
+
+  unmount();
 });
 
 test('Do render when get function return value change', async () => {
@@ -380,7 +408,7 @@ test('Do render when get function return value change', async () => {
     );
   }
 
-  render(<Test />);
+  const { unmount } = render(<Test />);
 
   expect(renderCount).toBe(1);
 
@@ -389,4 +417,42 @@ test('Do render when get function return value change', async () => {
   expect(renderCount).toBe(2);
 
   screen.getByText('3');
+
+  unmount();
+});
+
+test('Do not render when get function return value not changed', async () => {
+  const store = new Store({
+    numbers: [0, 1, 2],
+    test: 1,
+    getNum() {
+      return this.test;
+    },
+    addNumber() {
+      this.numbers = [...this.numbers, 3];
+    }
+  });
+
+  let renderCount = 0;
+  function Test() {
+    const { getNum, addNumber } = useStore(store);
+    renderCount++;
+
+    return (
+      <>
+        <span>{getNum()}</span>
+        <button onClick={addNumber}>+</button>
+      </>
+    );
+  }
+
+  const { unmount } = render(<Test />);
+
+  expect(renderCount).toBe(1);
+
+  await userEvent.click(screen.getByRole('button', { name: '+' }));
+
+  expect(renderCount).toBe(1);
+
+  unmount();
 });
