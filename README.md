@@ -36,7 +36,7 @@ Creating and using a store is straightforward, with no need for separate setters
 
 Example:
 
-```tsx
+```jsx
 import { Store, useStore } from '@ga-ut/store';
 
 const countStore = new Store({
@@ -63,49 +63,88 @@ function Counter() {
 
 ### Type Safety
 
-The store's state can only be manipulated within the store itself, thanks to TypeScript type settings. Attempting to directly assign values from outside the store will result in TypeScript errors, ensuring safer maintenance of global state.
+The store provides strong type safety for state access and mutations:
 
-Example:
+```typescript
+// ❌ Type Error: Cannot access non-existent property
+const store = new Store({ count: 0 });
+store.getState().nonexistent; // Error: Property 'nonexistent' does not exist
 
-```tsx
-const countStore = new Store({
+// ❌ Type Error: Cannot assign wrong type
+store.getState().count = "1"; // Error: Type 'string' is not assignable to type 'number'
+
+// ❌ Type Error: Cannot reference other methods inside a method
+const store = new Store({
   count: 0,
   increment() {
-    this.count += 1; // This is allowed
+    this.count += 1;
   },
-  reset() {
-    // this.increment(); // This will cause a TypeScript error if uncommented
-    // Function properties cannot be accessed here
+  double() {
+    this.increment(); // Error: Property 'increment' does not exist on type '{ count: number }'
+    this.count *= 2;
   }
 });
 
-// This will cause a TypeScript error
-countStore.state.count = 5; // Error: Cannot assign to 'count' because it is a read-only property.
+// ✅ Correct: Methods should be self-contained
+const store = new Store({
+  count: 0,
+  increment() {
+    this.count += 1;
+  },
+  double() {
+    this.count *= 2;
+  }
+});
 ```
 
 ### Rendering Optimization
 
-The store automatically optimizes rendering performance. Components will only re-render when their specifically accessed store values change, ensuring efficient updates without manual optimization.
+The store automatically optimizes rendering performance. Components will only re-render when their specifically accessed store values change, ensuring efficient updates.
 
 Example:
 
-```tsx
+```jsx
 function Counter() {
-  // Automatically re-renders only when 'count' changes
+  // Re-renders only when 'count' changes
   const { count } = useStore(countStore);
   return <p>Count: {count}</p>;
 }
 
 function Controls() {
-  // This component won't re-render on state changes since it only uses actions
+  // Re-renders when any accessed state changes
+  const { increment, decrement } = useStore(countStore);
   return (
     <div>
-      <button onClick={countStore.state.increment}>+</button>
-      <button onClick={countStore.state.decrement}>-</button>
+      <button onClick={increment}>+</button>
+      <button onClick={decrement}>-</button>
+    </div>
+  );
+}
+
+// Getter functions are also optimized
+const statsStore = new Store({
+  numbers: [1, 2, 3],
+  getMax() {
+    // Re-renders only when 'numbers' array changes
+    return Math.max(...this.numbers);
+  },
+  addNumber(num) {
+    this.numbers = [...this.numbers, num];
+  }
+});
+
+function Stats() {
+  const { getMax, addNumber } = useStore(statsStore);
+  return (
+    <div>
+      <p>Maximum: {getMax()}</p>
+      <button onClick={() => addNumber(4)}>Add 4</button>
     </div>
   );
 }
 ```
+
+In the example above, the `Stats` component will only re-render when the `numbers` array changes, even though it's using a getter function. The store automatically tracks dependencies used within getter functions and optimizes rendering accordingly.
 
 ### Using Immer for Immutable Updates
 
@@ -117,7 +156,25 @@ Example:
 import { Store, useStore } from '@ga-ut/store';
 import { produce } from 'immer';
 
-const personStore = new Store({
+interface Address {
+  city: string;
+  zip: string;
+}
+
+interface Contact {
+  email: string;
+  phone: string;
+}
+
+interface Person {
+  name: string;
+  age: number;
+  address: Address;
+  contact: Contact;
+  updateUserProfile(newCity: string, newPhone: string): void;
+}
+
+const personStore = new Store<Person>({
   name: 'Alice',
   age: 25,
   address: {
