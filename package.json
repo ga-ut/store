@@ -1,6 +1,6 @@
 {
   "name": "@ga-ut/store",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Lightweight React State Management with Store",
   "private": false,
   "publishConfig": {
