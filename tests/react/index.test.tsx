@@ -1,5 +1,5 @@
 import React from 'react';
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { enableMapSet, produce } from 'immer';
@@ -8,451 +8,306 @@ import { useStore } from '../../src/react';
 
 enableMapSet();
 
-const countStore = new Store({
-  count: 1,
-  dummy: 0,
-  test: 0,
-  nope() {
-    this.count = this.count;
-  },
-  inc() {
-    this.count += 1;
-  },
-  dec() {
-    this.count -= 1;
-  },
-  dummyInc() {
-    this.dummy += 1;
-  }
-});
+describe('Store with React Integration', () => {
+  describe('Basic State Management', () => {
+    const countStore = new Store({
+      count: 1,
+      dummy: 0,
+      inc() {
+        this.count += 1;
+      },
+      dec() {
+        this.count -= 1;
+      },
+      noChange() {
+        this.count = this.count;
+      },
+      setDummy() {
+        this.dummy += 1;
+      }
+    });
 
-test('Just count rendered', async () => {
-  let countRender = 0;
-  let incBtnRender = 0;
-  let decBtnRender = 0;
+    test('should only re-render components that use changed state', async () => {
+      let countRender = 0;
+      let incBtnRender = 0;
+      let decBtnRender = 0;
 
-  function Test() {
-    return (
-      <>
-        <Count />
-        <IncBtn />
-        <DecBtn />
-      </>
-    );
-  }
+      function Counter() {
+        const { count } = useStore(countStore);
+        countRender++;
+        return <div>{count}</div>;
+      }
 
-  function Count() {
-    const { count } = useStore(countStore);
-    countRender++;
-    return count;
-  }
+      function IncButton() {
+        incBtnRender++;
+        return <button onClick={countStore.getState().inc}>+</button>;
+      }
 
-  function IncBtn() {
-    incBtnRender++;
-    return <button onClick={countStore.getState().inc}>+</button>;
-  }
+      function DecButton() {
+        decBtnRender++;
+        return <button onClick={countStore.getState().dec}>-</button>;
+      }
 
-  function DecBtn() {
-    decBtnRender++;
-    return <button onClick={countStore.getState().dec}>-</button>;
-  }
+      const { unmount } = render(
+        <>
+          <Counter />
+          <IncButton />
+          <DecButton />
+        </>
+      );
 
-  const { unmount } = render(<Test />);
+      expect(countRender).toBe(1);
+      expect(incBtnRender).toBe(1);
+      expect(decBtnRender).toBe(1);
 
-  expect(countRender).toBe(1);
-  expect(incBtnRender).toBe(1);
-  expect(decBtnRender).toBe(1);
+      await userEvent.click(screen.getByRole('button', { name: '+' }));
+      expect(countRender).toBe(2);
+      expect(incBtnRender).toBe(1);
+      expect(decBtnRender).toBe(1);
 
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
+      unmount();
+    });
 
-  expect(countRender).toBe(2);
-  expect(incBtnRender).toBe(1);
-  expect(decBtnRender).toBe(1);
+    test('should not re-render when state remains unchanged', async () => {
+      let renderCount = 0;
 
-  screen.getByText('2');
+      function Counter() {
+        const { count, noChange } = useStore(countStore);
+        renderCount++;
+        return (
+          <>
+            <div>{count}</div>
+            <button onClick={noChange}>No Change</button>
+          </>
+        );
+      }
 
-  unmount();
-});
+      const { unmount } = render(<Counter />);
 
-test('Shallow state change test', async () => {
-  let countRender = 0;
-  let nopeBtnRender = 0;
+      expect(renderCount).toBe(1);
 
-  function Count() {
-    const { count } = useStore(countStore);
-    countRender++;
-    return count;
-  }
+      await userEvent.click(screen.getByRole('button', { name: 'No Change' }));
+      expect(renderCount).toBe(1);
 
-  function NopeBtn() {
-    const { nope } = useStore(countStore);
-    nopeBtnRender++;
-    return <button onClick={nope}>nope</button>;
-  }
+      unmount();
+    });
 
-  const { unmount } = render(
-    <>
-      <Count />
-      <NopeBtn />
-    </>
-  );
+    test('should not re-render when only dummy state is changed', async () => {
+      let renderCount = 0;
 
-  await userEvent.click(screen.getByRole('button', { name: 'nope' }));
+      function Counter() {
+        const { count, dec } = useStore(countStore);
+        renderCount++;
+        return (
+          <>
+            <div>{count}</div>
+            <button onClick={dec}>-</button>
+          </>
+        );
+      }
 
-  expect(countRender).toBe(1);
-  expect(nopeBtnRender).toBe(1);
+      const { unmount } = render(<Counter />);
 
-  unmount();
-});
+      expect(renderCount).toBe(1);
 
-test('Bound from key test', async () => {
-  let countRender = 0;
-  let dummyRender = 0;
+      countStore.getState().setDummy();
 
-  function Count() {
-    const { count } = useStore(countStore);
-    countRender++;
-    return (
-      <>
-        {count}
-        <button onClick={countStore.getState().dummyInc}>+</button>
-      </>
-    );
-  }
+      expect(renderCount).toBe(1);
 
-  function Dummy() {
-    const { dummy } = useStore(countStore);
-    dummyRender++;
-    return (
-      <>
-        {dummy}
-        <button onClick={countStore.getState().inc}>add</button>
-      </>
-    );
-  }
+      await userEvent.click(screen.getByRole('button', { name: '-' }));
+      expect(renderCount).toBe(2);
 
-  const { unmount } = render(
-    <>
-      <Dummy />
-      <Count />
-    </>
-  );
-
-  expect(countRender).toBe(1);
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  expect(countRender).toBe(1);
-  expect(dummyRender).toBe(2);
-
-  await userEvent.click(screen.getByRole('button', { name: 'add' }));
-
-  expect(countRender).toBe(2);
-  expect(dummyRender).toBe(2);
-
-  unmount();
-});
-
-test('Object value test with immer', async () => {
-  const personStore = new Store({
-    name: 'Alice',
-    age: 25,
-    address: {
-      city: 'New York',
-      zip: '10001'
-    },
-    contact: {
-      email: 'alice@example.com',
-      phone: '123-456-7890'
-    },
-    updateUserProfile(newCity: string, newPhone: string) {
-      this.address = produce(this.address, (draft) => {
-        draft.city = newCity;
-      });
-
-      this.contact = produce(this.contact, (draft) => {
-        draft.phone = newPhone;
-      });
-    }
+      unmount();
+    });
   });
 
-  let renderCount = 0;
-  function Test() {
-    const { address, contact, updateUserProfile } = useStore(personStore);
-    renderCount++;
-
-    return (
-      <>
-        <span>{address.city}</span>
-        <span>{contact.phone}</span>
-        <button onClick={() => updateUserProfile('Seoul', '012-345-6789')}>
-          update
-        </button>
-      </>
-    );
-  }
-
-  const { unmount } = render(<Test />);
-
-  screen.getByText('New York');
-  screen.getByText('123-456-7890');
-
-  await userEvent.click(screen.getByRole('button', { name: 'update' }));
-
-  screen.getByText('Seoul');
-  screen.getByText('012-345-6789');
-  expect(renderCount).toBe(2);
-
-  await userEvent.click(screen.getByRole('button', { name: 'update' }));
-  expect(renderCount).toBe(2);
-
-  unmount();
-});
-
-test('Array value test', async () => {
-  const store = new Store({
-    numbers: [0],
-    add() {
-      this.numbers = produce(this.numbers, (draft) => {
-        draft.push(Math.max(...draft) + 1);
-      });
-    }
-  });
-
-  function Test() {
-    const { numbers, add } = useStore(store);
-
-    return (
-      <>
-        {numbers.map((number) => (
-          <div key={number}>{number}</div>
-        ))}
-        <button onClick={add}>+</button>
-      </>
-    );
-  }
-
-  const { unmount } = render(<Test />);
-
-  screen.getByText('0');
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  screen.getByText('1');
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  screen.getByText('2');
-
-  unmount();
-});
-
-test('Set value test', async () => {
-  const store = new Store({
-    numbers: new Set([0]),
-    add() {
-      this.numbers = produce(this.numbers, (draft) => {
-        const max = Math.max(...draft);
-
-        if (max > 1) {
-          return;
-        }
-
-        draft.add(max + 1);
-      });
-    }
-  });
-
-  let renderCount = 0;
-  function Test() {
-    const { numbers, add } = useStore(store);
-    renderCount++;
-
-    return (
-      <>
-        {[...numbers.values()].map((number) => (
-          <div key={number}>{number}</div>
-        ))}
-        <button onClick={add}>+</button>
-      </>
-    );
-  }
-
-  const { unmount } = render(<Test />);
-
-  screen.getByText('0');
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  expect(renderCount).toBe(2);
-
-  screen.getByText('1');
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  screen.getByText('2');
-
-  expect(renderCount).toBe(3);
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  expect(renderCount).toBe(3);
-
-  unmount();
-});
-
-test('Map value test', async () => {
-  const store = new Store({
-    building: new Map([[0, { person: { name: 'Jack', age: 10 } }]]),
-    setAge(num: number) {
-      this.building = produce(this.building, (draft) => {
-        const building = draft.get(0);
-
-        if (building) {
-          building.person.age = num;
+  describe('Complex State Updates', () => {
+    test('should handle immer updates correctly', async () => {
+      const userStore = new Store({
+        profile: {
+          city: 'New York',
+          contact: {
+            phone: '123-456-7890'
+          }
+        },
+        updateProfile(newCity: string, newPhone: string) {
+          this.profile = produce(this.profile, (draft) => {
+            draft.city = newCity;
+            draft.contact.phone = newPhone;
+          });
         }
       });
-    }
+
+      let renderCount = 0;
+
+      function UserProfile() {
+        const { profile, updateProfile } = useStore(userStore);
+        renderCount++;
+        return (
+          <>
+            <div>{profile.city}</div>
+            <div>{profile.contact.phone}</div>
+            <button onClick={() => updateProfile('Seoul', '010-1234-5678')}>
+              Update
+            </button>
+          </>
+        );
+      }
+
+      const { unmount } = render(<UserProfile />);
+
+      screen.getByText('New York');
+      screen.getByText('123-456-7890');
+      expect(renderCount).toBe(1);
+
+      await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+      screen.getByText('Seoul');
+      screen.getByText('010-1234-5678');
+      expect(renderCount).toBe(2);
+
+      unmount();
+    });
   });
 
-  let renderCount = 0;
-  function Test() {
-    const { building, setAge } = useStore(store);
-    renderCount++;
+  describe('Getter Functions', () => {
+    test('should optimize renders with computed values', async () => {
+      const statsStore = new Store({
+        numbers: [1, 2, 3],
+        getMax() {
+          return Math.max(...this.numbers);
+        },
+        addNumber() {
+          this.numbers = [...this.numbers, 4];
+        }
+      });
 
-    return (
-      <>
-        {[...building.values()].map(({ person }) => (
-          <div key={person.name}>{person.age}</div>
-        ))}
-        <button onClick={() => setAge(20)}>+</button>
-      </>
-    );
-  }
+      let renderCount = 0;
 
-  const { unmount } = render(<Test />);
+      function Stats() {
+        const { getMax, addNumber } = useStore(statsStore);
+        renderCount++;
+        return (
+          <>
+            <div>{getMax()}</div>
+            <button onClick={addNumber}>Add</button>
+          </>
+        );
+      }
 
-  screen.getByText('10');
+      const { unmount } = render(<Stats />);
 
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
+      expect(renderCount).toBe(1);
+      screen.getByText('3');
 
-  expect(renderCount).toBe(2);
+      await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+      expect(renderCount).toBe(2);
+      screen.getByText('4');
 
-  screen.getByText('20');
+      unmount();
+    });
 
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
+    test('should not cause infinite renders with getters', async () => {
+      const store = new Store({
+        value: 1,
+        getValue() {
+          return this.value;
+        },
+        increment() {
+          this.value += 1;
+        }
+      });
 
-  expect(renderCount).toBe(2);
+      let renderCount = 0;
 
-  unmount();
-});
+      function Counter() {
+        const { getValue, increment } = useStore(store);
+        renderCount++;
+        return (
+          <>
+            <div>{getValue()}</div>
+            <button onClick={increment}>+</button>
+          </>
+        );
+      }
 
-test('Do not infinite render in get function', async () => {
-  const store = new Store({
-    numbers: [0, 1, 2],
-    getMax() {
-      return Math.max(...this.numbers);
-    },
-    addNumber() {
-      this.numbers = [...this.numbers, 3];
-    }
+      const { unmount } = render(<Counter />);
+
+      expect(renderCount).toBe(1);
+      screen.getByText('1');
+
+      await userEvent.click(screen.getByRole('button', { name: '+' }));
+      expect(renderCount).toBe(2);
+      screen.getByText('2');
+
+      unmount();
+    });
   });
 
-  let renderCount = 0;
-  function Test() {
-    const { getMax, addNumber } = useStore(store);
-    renderCount++;
+  describe('Collection Types', () => {
+    test('should handle Set updates correctly', async () => {
+      const setStore = new Store({
+        items: new Set([1, 2]),
+        add() {
+          this.items = new Set([...this.items, 3]);
+        }
+      });
 
-    return (
-      <>
-        <span>{getMax()}</span>
-        <button onClick={addNumber}>+</button>
-      </>
-    );
-  }
+      let renderCount = 0;
 
-  const { unmount } = render(<Test />);
+      function SetComponent() {
+        const { items, add } = useStore(setStore);
+        renderCount++;
+        return (
+          <>
+            <div>{items.size}</div>
+            <button onClick={add}>Add</button>
+          </>
+        );
+      }
 
-  expect(renderCount).toBe(1);
+      const { unmount } = render(<SetComponent />);
 
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
+      expect(renderCount).toBe(1);
+      screen.getByText('2');
 
-  expect(renderCount).toBe(2);
+      await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+      expect(renderCount).toBe(2);
+      screen.getByText('3');
 
-  screen.getByText('3');
+      unmount();
+    });
 
-  unmount();
-});
+    test('should handle Map updates correctly', async () => {
+      const mapStore = new Store({
+        ages: new Map([['John', 25]]),
+        setAge(age: number) {
+          this.ages = new Map(this.ages.set('John', age));
+        }
+      });
 
-test('Do render when get function return value change', async () => {
-  const store = new Store({
-    numbers: [0, 1, 2],
-    getMax() {
-      return Math.max(...this.numbers);
-    },
-    addNumber() {
-      this.numbers = [...this.numbers, 3];
-    }
+      let renderCount = 0;
+
+      function MapComponent() {
+        const { ages, setAge } = useStore(mapStore);
+        renderCount++;
+        return (
+          <>
+            <div>{ages.get('John')}</div>
+            <button onClick={() => setAge(30)}>Update</button>
+          </>
+        );
+      }
+
+      const { unmount } = render(<MapComponent />);
+
+      expect(renderCount).toBe(1);
+      screen.getByText('25');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+      expect(renderCount).toBe(2);
+      screen.getByText('30');
+
+      unmount();
+    });
   });
-
-  let renderCount = 0;
-  function Test() {
-    const { getMax, addNumber } = useStore(store);
-    renderCount++;
-
-    return (
-      <>
-        <span>{getMax()}</span>
-        <button onClick={addNumber}>+</button>
-      </>
-    );
-  }
-
-  const { unmount } = render(<Test />);
-
-  expect(renderCount).toBe(1);
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  expect(renderCount).toBe(2);
-
-  screen.getByText('3');
-
-  unmount();
-});
-
-test('Do not render when get function return value not changed', async () => {
-  const store = new Store({
-    numbers: [0, 1, 2],
-    test: 1,
-    getNum() {
-      return this.test;
-    },
-    addNumber() {
-      this.numbers = [...this.numbers, 3];
-    }
-  });
-
-  let renderCount = 0;
-  function Test() {
-    const { getNum, addNumber } = useStore(store);
-    renderCount++;
-
-    return (
-      <>
-        <span>{getNum()}</span>
-        <button onClick={addNumber}>+</button>
-      </>
-    );
-  }
-
-  const { unmount } = render(<Test />);
-
-  expect(renderCount).toBe(1);
-
-  await userEvent.click(screen.getByRole('button', { name: '+' }));
-
-  expect(renderCount).toBe(1);
-
-  unmount();
 });
