@@ -21,10 +21,8 @@ type Dependencies<T> = Set<keyof T>;
 export class Store<T extends object> {
   private state: StoreState<T>;
   private listeners = new Set<Listener<T>>();
-  private proxyState: StoreState<T> | null = null;
-  private subscriptionCount = 0;
-  private listenerCount = 0;
-  private subscriptionDependencies = new Map<number, Dependencies<T>>();
+  private proxyStateMap = new Map<string, StoreState<T>>();
+  private subscriptionDependencies = new Map<string, Dependencies<T>>();
   private methodDependencies = new Set<keyof T>();
 
   constructor(state: StoreState<T>) {
@@ -32,34 +30,34 @@ export class Store<T extends object> {
     this.initializeMethods();
   }
 
-  getState(): StoreState<T> {
-    if (!this.proxyState) {
-      this.proxyState = this.createStateProxy();
+  getState(id: string = ''): StoreState<T> {
+    if (!this.proxyStateMap.has(id)) {
+      this.proxyStateMap.set(id, this.createStateProxy(id));
     }
-    return this.proxyState;
+    return this.proxyStateMap.get(id)!;
   }
 
-  subscribe(render: () => void, trackOnly: boolean = false): () => void {
+  subscribe(
+    render: () => void,
+    id: string,
+    trackOnly: boolean = false
+  ): () => void {
     if (trackOnly) {
-      this.subscriptionCount += 1;
       return () => {
-        this.subscriptionCount -= 1;
+        this.subscriptionDependencies.get(id)?.clear();
       };
     }
 
-    const listenerId = ++this.listenerCount;
     const listener: Listener<T> = (prevState, modifiedKeys) => {
-      if (this.shouldComponentUpdate(prevState, modifiedKeys, listenerId)) {
-        this.proxyState = this.createStateProxy();
+      if (this.shouldComponentUpdate(prevState, modifiedKeys, id)) {
+        this.proxyStateMap.set(id, this.createStateProxy(id));
         render();
-        this.resetSubscriptionTracking(listenerId);
       }
     };
 
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
-      this.listenerCount -= 1;
     };
   }
 
@@ -73,23 +71,21 @@ export class Store<T extends object> {
     });
   }
 
-  private trackPropertyAccess(key: keyof T): void {
-    const dependencies = this.subscriptionDependencies.get(
-      this.subscriptionCount
-    );
+  private trackPropertyAccess(key: keyof T, id: string): void {
+    const dependencies = this.subscriptionDependencies.get(id);
     if (!dependencies) {
-      this.subscriptionDependencies.set(this.subscriptionCount, new Set([key]));
+      this.subscriptionDependencies.set(id, new Set([key]));
     } else {
       dependencies.add(key);
     }
   }
 
-  private createStateProxy(): StoreState<T> {
+  private createStateProxy(id: string): StoreState<T> {
     return new Proxy(this.state, {
       get: (target: StoreState<T>, key) => {
         const value = target[key as keyof T];
         if (typeof value !== 'function') {
-          this.trackPropertyAccess(key as keyof T);
+          this.trackPropertyAccess(key as keyof T, id);
         }
         return value;
       }
@@ -99,10 +95,10 @@ export class Store<T extends object> {
   private shouldComponentUpdate(
     prevState: StoreState<T>,
     modifiedKeys: Set<keyof T>,
-    listenerId: number
+    id: string
   ): boolean {
     const allDependencies = this.methodDependencies.union(
-      this.subscriptionDependencies.get(listenerId) ?? new Set()
+      this.subscriptionDependencies.get(id) ?? new Set()
     );
 
     if (!allDependencies.size) return false;
@@ -110,11 +106,6 @@ export class Store<T extends object> {
     return Array.from(allDependencies.intersection(modifiedKeys)).some(
       (key) => prevState[key] !== this.state[key]
     );
-  }
-
-  private resetSubscriptionTracking(listenerId: number): void {
-    this.subscriptionCount = 0;
-    this.subscriptionDependencies.get(listenerId)?.clear();
   }
 
   private notifyListeners(

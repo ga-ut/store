@@ -1,18 +1,19 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useId, useMemo, useSyncExternalStore } from 'react';
 import { Store } from '../core/index';
 
 export function useStore<T extends object>(store: Store<T>) {
-  const unsubscribe = store.subscribe(() => {}, true);
+  const id = useId();
+  const unsubscribe = useMemo(() => store.subscribe(() => {}, id, true), []);
 
   useEffect(() => {
     return unsubscribe;
   }, []);
 
   useSyncExternalStore(
-    (render) => store.subscribe(render),
-    () => store.getState(),
-    () => store.getState()
+    (render) => store.subscribe(render, id),
+    () => store.getState(id),
+    () => store.getState(id)
   );
 
-  return store.getState() as T;
+  return store.getState(id) as T;
 }
