@@ -28,5 +28,5 @@ esbuild.buildSync({
   supported: { 'import-meta': true }
 });
 
-execSync('npx tsc');
+execSync('pnpm tsc');
 copyFileSync('build/index.d.ts', 'build/index.d.mts');
