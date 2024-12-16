@@ -22,6 +22,7 @@ export class Store<T extends object> {
   private state: StoreState<T>;
   private listeners = new Set<Listener<T>>();
   private proxyStateMap = new Map<string, StoreState<T>>();
+  private cachedDependencies = new Map<string, Dependencies<T>>();
   private subscriptionDependencies = new Map<string, Dependencies<T>>();
   private methodDependencies = new Set<keyof T>();
 
@@ -43,8 +44,12 @@ export class Store<T extends object> {
     trackOnly: boolean = false
   ): () => void {
     if (trackOnly) {
+      const dependencies = this.cachedDependencies.get(id);
+      if (dependencies) {
+        this.subscriptionDependencies.set(id, dependencies);
+      }
       return () => {
-        this.subscriptionDependencies.get(id)?.clear();
+        this.subscriptionDependencies.delete(id);
       };
     }
 
@@ -52,6 +57,7 @@ export class Store<T extends object> {
       if (this.shouldComponentUpdate(prevState, modifiedKeys, id)) {
         this.proxyStateMap.set(id, this.createStateProxy(id));
         render();
+        this.optimizedCache();
       }
     };
 
@@ -59,6 +65,15 @@ export class Store<T extends object> {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  private optimizedCache(): void {
+    this.cachedDependencies.clear();
+    const entries = this.subscriptionDependencies.entries();
+
+    for (const [id, dependencies] of entries) {
+      this.cachedDependencies.set(id, dependencies);
+    }
   }
 
   private initializeMethods(): void {
@@ -77,6 +92,13 @@ export class Store<T extends object> {
       this.subscriptionDependencies.set(id, new Set([key]));
     } else {
       dependencies.add(key);
+    }
+
+    const cachedDependencies = this.cachedDependencies.get(id);
+    if (!cachedDependencies) {
+      this.cachedDependencies.set(id, new Set([key]));
+    } else {
+      cachedDependencies.add(key);
     }
   }
 
