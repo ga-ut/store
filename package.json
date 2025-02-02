@@ -21,7 +21,7 @@
   "author": "ga-ut",
   "scripts": {
     "tsc": "tsc",
-    "pub": "vitest run && node build && npm publish",
+    "pub": "vitest run && node build && npm publish --access public",
     "test": "vitest test"
   },
   "exports": {
