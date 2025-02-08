@@ -10,7 +10,7 @@ const external = [
 
 esbuild.buildSync({
   entryPoints: ['src/index.ts'],
-  outfile: 'build/index.mjs',
+  outfile: 'dist/index.mjs',
   external,
   format: 'esm',
   target: 'es2018',
@@ -20,7 +20,7 @@ esbuild.buildSync({
 
 esbuild.buildSync({
   entryPoints: ['src/index.ts'],
-  outfile: 'build/index.js',
+  outfile: 'dist/index.js',
   external,
   format: 'cjs',
   target: 'es2018',
@@ -29,4 +29,4 @@ esbuild.buildSync({
 });
 
 execSync('pnpm tsc');
-copyFileSync('build/index.d.ts', 'build/index.d.mts');
+copyFileSync('dist/index.d.ts', 'dist/index.d.mts');
