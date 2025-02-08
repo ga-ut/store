@@ -71,5 +71,6 @@
     "global",
     "store"
   ],
-  "sideEffects": false
+  "sideEffects": false,
+  "packageManager": "pnpm@10.2.1"
 }
