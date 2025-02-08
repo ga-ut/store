@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, test } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { enableMapSet, produce } from 'immer';
 import { Store } from '../../src/core';
@@ -465,5 +465,46 @@ describe('Store with React Integration', () => {
 
       unmount();
     });
+  });
+
+  test('Await async test', async () => {
+    const promise = new Promise((resolve) => setTimeout(resolve, 100));
+    const store = new Store({
+      num: 0,
+      async same() {
+        await promise;
+        this.num = 0;
+      },
+      async modify() {
+        await promise;
+        this.num = 1;
+      }
+    });
+
+    let count = 0;
+
+    function Test() {
+      count += 1;
+      const { num, same, modify } = useStore(store);
+
+      return (
+        <>
+          <button onClick={same}>same</button>
+          <button onClick={modify}>modify</button>
+        </>
+      );
+    }
+
+    render(<Test />);
+
+    expect(count).toBe(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'same' }));
+
+    await waitFor(() => expect(count).not.toBe(2));
+
+    await userEvent.click(screen.getByRole('button', { name: 'modify' }));
+
+    await waitFor(() => expect(count).toBe(2));
   });
 });

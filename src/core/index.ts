@@ -156,12 +156,26 @@ export class Store<T extends object> {
 
       const result = method.apply(stateTracker, args);
 
-      if (result && modifiedKeys.size > 0) {
-        modifiedKeys.forEach((key) => this.methodDependencies.add(key));
-        return result;
+      if (result instanceof Promise) {
+        return result.then((value) =>
+          this.updateMethodDependencies(prevState, value, modifiedKeys)
+        );
       }
 
-      this.notifyListeners(prevState, modifiedKeys);
+      return this.updateMethodDependencies(prevState, result, modifiedKeys);
     }) as any;
+  }
+
+  private updateMethodDependencies(
+    state: StoreState<T>,
+    result: any,
+    modifiedKeys: Set<keyof T>
+  ) {
+    if (result && modifiedKeys.size > 0) {
+      modifiedKeys.forEach((key) => this.methodDependencies.add(key));
+      return result;
+    }
+
+    this.notifyListeners(state, modifiedKeys);
   }
 }
