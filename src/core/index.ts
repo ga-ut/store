@@ -31,11 +31,11 @@ export class Store<T extends object> {
     this.initializeMethods();
   }
 
-  getState(id: string = ''): StoreState<T> {
+  getState(id: string = ''): T {
     if (!this.proxyStateMap.has(id)) {
       this.proxyStateMap.set(id, this.createStateProxy(id));
     }
-    return this.proxyStateMap.get(id)!;
+    return this.proxyStateMap.get(id)! as T;
   }
 
   subscribe(
