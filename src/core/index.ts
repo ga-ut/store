@@ -157,6 +157,7 @@ export class Store<T extends object> {
       const result = method.apply(stateTracker, args);
 
       if (result instanceof Promise) {
+        this.notifyListeners(prevState, modifiedKeys);
         return result.then((value) =>
           this.updateMethodDependencies(prevState, value, modifiedKeys)
         );
