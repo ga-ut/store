@@ -5,7 +5,14 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     dir: 'tests',
-    reporters: 'basic',
+    reporters: [
+      [
+        'default',
+        {
+          summary: false
+        }
+      ]
+    ],
     setupFiles: ['vitest.setup.ts'],
     coverage: {
       include: ['src/**/'],

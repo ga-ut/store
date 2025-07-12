@@ -1,4 +1,4 @@
-import React from 'react';
+import '@testing-library/jest-dom/vitest';
 import { describe, expect, test } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
