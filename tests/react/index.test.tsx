@@ -584,3 +584,44 @@ describe('Await async test', () => {
     expect(rendered).toBe(3);
   });
 });
+
+describe('Async Loading State', () => {
+  test('should handle loading state during async operations', async () => {
+    const asyncStore = new Store({
+      loading: false,
+      data: null as string | null,
+      async fetchData() {
+        this.loading = true;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        this.data = 'some data';
+        this.loading = false;
+      }
+    });
+
+    function AsyncComponent() {
+      const { loading, data, fetchData } = useStore(asyncStore);
+      return (
+        <>
+          <div>{loading ? 'Loading...' : data}</div>
+          <button onClick={fetchData}>Fetch</button>
+        </>
+      );
+    }
+
+    const { unmount } = render(<AsyncComponent />);
+
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fetch' }));
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('some data')).toBeInTheDocument();
+
+    unmount();
+  });
+});

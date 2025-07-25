@@ -139,7 +139,6 @@ export class Store<T extends object> {
 
   private createMethodProxy(method: Function) {
     return ((...args: any[]) => {
-      const prevState = { ...this.state };
       const modifiedKeys = new Set<keyof T>();
 
       const stateTracker = new Proxy(this.state, {
@@ -154,16 +153,22 @@ export class Store<T extends object> {
         }
       });
 
+      const beforeMethodState = { ...this.state };
       const result = method.apply(stateTracker, args);
 
       if (result instanceof Promise) {
-        this.notifyListeners(prevState, modifiedKeys);
+        this.notifyListeners(beforeMethodState, modifiedKeys);
+        const beforePromiseState = { ...this.state };
         return result.then((value) =>
-          this.updateMethodDependencies(prevState, value, modifiedKeys)
+          this.updateMethodDependencies(beforePromiseState, value, modifiedKeys)
         );
       }
 
-      return this.updateMethodDependencies(prevState, result, modifiedKeys);
+      return this.updateMethodDependencies(
+        beforeMethodState,
+        result,
+        modifiedKeys
+      );
     }) as any;
   }
 
