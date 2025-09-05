@@ -13,5 +13,5 @@ esbuild.buildSync({ ...common, outfile: 'dist/index.js', format: 'cjs' });
 // ESModule build
 esbuild.buildSync({ ...common, outfile: 'dist/index.mjs', format: 'esm' });
 
-// Type declarations (build-only config to avoid test types)
-execSync('pnpm exec tsc -p tsconfig.build.json');
+// Type declarations with project references (build dependencies first)
+execSync('pnpm exec tsc -b tsconfig.build.json');

@@ -12,6 +12,147 @@ Lightweight state management core with adapters for React, Vue, Svelte, and Vani
 
 Install only what you need. Examples below show per-framework usage.
 
+## Per-Package Usage
+
+### Core (`@ga-ut/store-core`)
+
+Create a strongly-typed store with state and actions. Assign to `this` to update state. Subscribe to granular changes when needed.
+
+```
+import { Store } from '@ga-ut/store-core'
+
+const counter = new Store({
+  count: 0,
+  inc() { this.count += 1 },
+  dec() { this.count -= 1 }
+})
+
+// Read/write
+counter.getState().inc()
+
+// Subscribe (receives modified keys)
+const unsubscribe = counter.subscribe((modified) => {
+  if (modified.has('count')) {
+    console.log('count changed to', counter.getState().count)
+  }
+})
+
+unsubscribe()
+```
+
+### React (`@ga-ut/store-react`)
+
+Fine-grained re-renders using `useStore`. Components only re-render for the state keys they read.
+
+```
+import { Store } from '@ga-ut/store-core'
+import { useStore } from '@ga-ut/store-react'
+
+const countStore = new Store({
+  count: 0,
+  inc() { this.count += 1 },
+  dec() { this.count -= 1 }
+})
+
+function Counter() {
+  const { count } = useStore(countStore)
+  return <p>Count: {count}</p>
+}
+
+function Controls() {
+  const { inc, dec } = useStore(countStore)
+  return (
+    <>
+      <button onClick={inc}>+</button>
+      <button onClick={dec}>-</button>
+    </>
+  )
+}
+```
+
+### Vue (`@ga-ut/store-vue`)
+
+Convert slices to Vue refs and bind actions for Composition API.
+
+```
+// <script setup lang="ts">
+import { shallowRef } from 'vue'
+import { Store } from '@ga-ut/store-core'
+import { toRef, bindMethods } from '@ga-ut/store-vue'
+
+const store = new Store({
+  count: 0,
+  inc() { this.count += 1 }
+})
+
+const { ref: count } = toRef(store, s => s.count, shallowRef)
+const { inc } = bindMethods(store) as { inc: () => void }
+// </script>
+
+// <template>
+//   <button @click="inc">+</button>
+//   <span>{{ count }}</span>
+// </template>
+```
+
+Selecting multiple values into a single ref:
+
+```
+import { shallowRef } from 'vue'
+import { select } from '@ga-ut/store-vue'
+
+const { ref: tuple } = select(store, [ s => s.count, s => s.other ], shallowRef)
+```
+
+### Svelte (`@ga-ut/store-svelte`)
+
+Expose slices as readable stores and bind actions.
+
+```
+<!-- Counter.svelte -->
+<script>
+  import { toReadable, bindMethods } from '@ga-ut/store-svelte'
+  export let store
+  const count$ = toReadable(store, s => s.count) // readable
+  const { inc } = bindMethods(store)
+  $: doubled = $count$ * 2
+  // use $count$ in markup (auto-subscribe)
+</script>
+
+<button on:click={inc}>+</button>
+<div>{ $count$ } / { doubled }</div>
+```
+
+### Vanilla (`@ga-ut/store-vanilla`)
+
+Framework-free helpers for subscriptions and interop.
+
+```
+import { Store } from '@ga-ut/store-core'
+import { watch, on, select, toObservable } from '@ga-ut/store-vanilla'
+
+const s = new Store({
+  value: 0,
+  set(v: number) { this.value = v }
+})
+
+// watch a selector
+const unWatch = watch(s, x => x.value, v => console.log('value:', v), { fireImmediately: true })
+
+// explicit keys
+const unOn = on(s, ['value'], () => console.log('value changed'))
+
+// tiny derived view
+const view = select(s, x => x.value)
+const unView = view.subscribe(v => console.log('derived:', v))
+
+// minimal observable interop
+const obs = toObservable(s, x => x.value)
+const unObs = obs.subscribe({ next: v => console.log('obs:', v) })
+
+unWatch(); unOn(); unView(); unObs()
+```
+
 ## Features
 
 This lightweight state management solution provides convenient syntax, strong type safety, and rendering control through framework adapters.
