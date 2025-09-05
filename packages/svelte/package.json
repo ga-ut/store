@@ -1,8 +1,9 @@
 {
   "name": "@ga-ut/store-svelte",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "type": "commonjs",
+  "description": "Svelte adapter for @ga-ut/store-core. Expose store slices as readable stores and bind actions easily.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -16,6 +17,27 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "svelte",
+    "readable",
+    "store",
+    "state",
+    "state-management",
+    "bindMethods",
+    "typescript"
+  ],
+  "homepage": "https://github.com/ga-ut/store",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ga-ut/store.git",
+    "directory": "packages/svelte"
+  },
+  "bugs": {
+    "url": "https://github.com/ga-ut/store/issues"
+  },
+  "author": "ga-ut",
+  "license": "MIT",
+  "sideEffects": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

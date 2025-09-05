@@ -2,9 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["node"],
-    "outDir": "dist"
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {}
   },
   "include": ["src"],
   "exclude": ["tests", "**/*.test.*", "**/*.spec.*"]
 }
-

@@ -1,8 +1,9 @@
 {
   "name": "@ga-ut/store-react",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": false,
   "type": "commonjs",
+  "description": "React adapter for @ga-ut/store-core. Fine-grained re-renders via a dependency-tracking useStore hook.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -16,6 +17,28 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "react",
+    "hook",
+    "useStore",
+    "state",
+    "store",
+    "state-management",
+    "selector",
+    "typescript"
+  ],
+  "homepage": "https://github.com/ga-ut/store",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ga-ut/store.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/ga-ut/store/issues"
+  },
+  "author": "ga-ut",
+  "license": "MIT",
+  "sideEffects": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

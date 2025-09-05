@@ -1,8 +1,9 @@
 {
   "name": "@ga-ut/store-vue",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "type": "commonjs",
+  "description": "Vue adapter for @ga-ut/store-core. Create refs from store slices and bind actions for Composition API.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -16,6 +17,27 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "vue",
+    "ref",
+    "composition-api",
+    "state",
+    "store",
+    "state-management",
+    "typescript"
+  ],
+  "homepage": "https://github.com/ga-ut/store",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ga-ut/store.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/ga-ut/store/issues"
+  },
+  "author": "ga-ut",
+  "license": "MIT",
+  "sideEffects": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
