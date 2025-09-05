@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@ga-ut/store-core": ["../core/src"]
+    },
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

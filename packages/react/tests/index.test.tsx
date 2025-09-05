@@ -3,8 +3,9 @@ import { describe, expect, test } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { enableMapSet, produce } from 'immer';
-import { Store } from '../../src/core';
-import { useStore } from '../../src/react';
+import { Store } from '../../core/src';
+import { useStore } from '../src';
+import { useEffect } from 'react';
 
 enableMapSet();
 
@@ -38,13 +39,15 @@ describe('Basic State Management', () => {
     }
 
     function IncButton() {
+      const state = countStore.getState();
       incBtnRender++;
-      return <button onClick={countStore.getState().inc}>+</button>;
+      return <button onClick={state.inc}>+</button>;
     }
 
     function DecButton() {
+      const state = countStore.getState();
       decBtnRender++;
-      return <button onClick={countStore.getState().dec}>-</button>;
+      return <button onClick={state.dec}>-</button>;
     }
 
     const { unmount } = render(
@@ -140,13 +143,14 @@ describe('Complex State Updates', () => {
     let renderCount = 0;
 
     function UserProfile() {
-      const { profile, updateProfile } = useStore(userStore);
+      const store = useStore(userStore);
+      const profile = store.profile;
       renderCount++;
       return (
         <>
           <div>{profile.city}</div>
           <div>{profile.contact.phone}</div>
-          <button onClick={() => updateProfile('Seoul', '010-1234-5678')}>
+          <button onClick={() => store.updateProfile('Seoul', '010-1234-5678')}>
             Update
           </button>
         </>
@@ -183,12 +187,12 @@ describe('Getter Functions', () => {
     let renderCount = 0;
 
     function Stats() {
-      const { getMax, addNumber } = useStore(statsStore);
+      const store = useStore(statsStore);
       renderCount++;
       return (
         <>
-          <div>{getMax()}</div>
-          <button onClick={addNumber}>Add</button>
+          <div>{store.getMax()}</div>
+          <button onClick={store.addNumber}>Add</button>
         </>
       );
     }
@@ -219,12 +223,12 @@ describe('Getter Functions', () => {
     let renderCount = 0;
 
     function Counter() {
-      const { getValue, increment } = useStore(store);
+      const s = useStore(store);
       renderCount++;
       return (
         <>
-          <div>{getValue()}</div>
-          <button onClick={increment}>+</button>
+          <div>{s.getValue()}</div>
+          <button onClick={s.increment}>+</button>
         </>
       );
     }
@@ -287,12 +291,12 @@ describe('Collection Types', () => {
     let renderCount = 0;
 
     function MapComponent() {
-      const { ages, setAge } = useStore(mapStore);
+      const store = useStore(mapStore);
       renderCount++;
       return (
         <>
-          <div>{ages.get('John')}</div>
-          <button onClick={() => setAge(30)}>Update</button>
+          <div>{store.ages.get('John')}</div>
+          <button onClick={() => store.setAge(30)}>Update</button>
         </>
       );
     }
@@ -473,18 +477,18 @@ describe('Error Cases and Edge Scenarios', () => {
     });
 
     function ErrorComponent() {
-      const { isError, setIsError, throwError } = useStore(errorStore);
+      const store = useStore(errorStore);
       return (
         <button
           onClick={() => {
             try {
-              throwError();
+              store.throwError();
             } catch {
-              setIsError(true);
+              store.setIsError(true);
             }
           }}
         >
-          {isError ? 'Error' : 'button'}
+          {store.isError ? 'Error' : 'button'}
         </button>
       );
     }
@@ -599,11 +603,11 @@ describe('Async Loading State', () => {
     });
 
     function AsyncComponent() {
-      const { loading, data, fetchData } = useStore(asyncStore);
+      const store = useStore(asyncStore);
       return (
         <>
-          <div>{loading ? 'Loading...' : data}</div>
-          <button onClick={fetchData}>Fetch</button>
+          <div>{store.loading ? 'Loading...' : store.data}</div>
+          <button onClick={store.fetchData}>Fetch</button>
         </>
       );
     }
@@ -614,7 +618,7 @@ describe('Async Loading State', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Fetch' }));
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(await screen.findByText('Loading...')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
@@ -623,5 +627,158 @@ describe('Async Loading State', () => {
     expect(screen.getByText('some data')).toBeInTheDocument();
 
     unmount();
+  });
+});
+
+describe('Nested compoennt test', () => {
+  test('Child component can update parents', () => {
+    const valueStore = new Store({
+      value: 0,
+      add() {
+        this.value += 1;
+      }
+    });
+    let renderCount = 0;
+    function Parent() {
+      renderCount += 1;
+      const { value } = useStore(valueStore);
+
+      return <Child />;
+    }
+
+    function Child() {
+      const store = valueStore.getState();
+
+      useEffect(() => {
+        store.add();
+      }, []);
+      return null;
+    }
+
+    render(<Parent />);
+
+    expect(renderCount).toBe(2);
+  });
+});
+
+describe('Additional Coverage', () => {
+  test('Method-only consumer should not re-render on state changes', async () => {
+    const s = new Store({
+      value: 0,
+      inc() {
+        this.value += 1;
+      },
+      other: 0,
+      bumpOther() {
+        this.other += 1;
+      }
+    });
+
+    let renders = 0;
+    function ButtonOnly() {
+      renders += 1;
+      const { inc } = useStore(s);
+      return <button onClick={inc}>+</button>;
+    }
+
+    render(<ButtonOnly />);
+
+    expect(renders).toBe(1);
+    // Changing unrelated key should not re-render method-only consumer
+    s.getState().bumpOther();
+    expect(renders).toBe(1);
+
+    // Using the method should not re-render since UI doesn't read it
+    await userEvent.click(screen.getByRole('button', { name: '+' }));
+    expect(renders).toBe(1);
+    expect(s.getState().value).toBe(1);
+  });
+
+  test('Dynamic dependencies update correctly', async () => {
+    const s = new Store({
+      flag: false,
+      a: 0,
+      b: 0,
+      toggle() {
+        this.flag = !this.flag;
+      },
+      incA() {
+        this.a += 1;
+      },
+      incB() {
+        this.b += 1;
+      }
+    });
+
+    let renders = 0;
+    function Comp() {
+      renders += 1;
+      const st = useStore(s);
+      return (
+        <>
+          <div data-testid="val">{st.flag ? st.a : st.b}</div>
+          <button onClick={st.toggle}>toggle</button>
+          <button onClick={st.incA}>a</button>
+          <button onClick={st.incB}>b</button>
+        </>
+      );
+    }
+
+    render(<Comp />);
+    expect(renders).toBe(1);
+    expect(screen.getByTestId('val')).toHaveTextContent('0');
+
+    // Initially depends on b only
+    await userEvent.click(screen.getByRole('button', { name: 'a' }));
+    // No re-render because 'a' not used
+    expect(renders).toBe(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'b' }));
+    expect(renders).toBe(2);
+    expect(screen.getByTestId('val')).toHaveTextContent('1');
+
+    // Switch dependency to 'a'
+    await userEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    expect(renders).toBe(3);
+    expect(screen.getByTestId('val')).toHaveTextContent('1');
+
+    // Now only 'a' updates should cause re-render
+    await userEvent.click(screen.getByRole('button', { name: 'b' }));
+    expect(renders).toBe(3);
+
+    await userEvent.click(screen.getByRole('button', { name: 'a' }));
+    expect(renders).toBe(4);
+    expect(screen.getByTestId('val')).toHaveTextContent('2');
+  });
+
+  test('Multiple field updates in one action cause single render', async () => {
+    const s = new Store({
+      a: 0,
+      b: 0,
+      incBoth() {
+        this.a += 1;
+        this.b += 1;
+      }
+    });
+
+    let renders = 0;
+    function Comp() {
+      renders += 1;
+      const st = useStore(s);
+      return (
+        <>
+          <div data-testid="sum">{st.a + st.b}</div>
+          <button onClick={st.incBoth}>both</button>
+        </>
+      );
+    }
+
+    render(<Comp />);
+    expect(renders).toBe(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'both' }));
+    // React 18 batches state updates from the same event
+    expect(renders).toBe(2);
+    expect(screen.getByTestId('sum')).toHaveTextContent('2');
   });
 });

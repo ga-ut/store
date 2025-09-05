@@ -1,11 +1,8 @@
 {
   "name": "@ga-ut/store",
-  "version": "1.1.4",
-  "description": "Lightweight React State Management with Store",
-  "private": false,
-  "files": [
-    "dist"
-  ],
+  "version": "2.0.0",
+  "description": "Lightweight state management core with adapters (React/Vue/Svelte/Vanilla)",
+  "private": true,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -18,26 +15,11 @@
   "bugs": {
     "url": "https://github.com/ga-ut/store/issues"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "type": "commonjs",
   "author": "ga-ut",
   "scripts": {
-    "tsc": "tsc",
-    "pub": "vitest run && node build && npm publish --access public",
-    "test": "vitest test"
-  },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "default": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      }
-    }
+    "test": "pnpm -r --filter @ga-ut/* run test",
+    "build": "pnpm -r --filter @ga-ut/* run build"
   },
   "license": "MIT",
   "devDependencies": {
@@ -57,7 +39,7 @@
     "react-dom": "19.0.0-rc.1",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.15.0",
-    "vitest": ">=2.1.9"
+    "vitest": "^3.0.5"
   },
   "peerDependencies": {
     "@types/react": ">=18.0.0",

@@ -1,43 +1,30 @@
 # ga-ut/store
 
-Lightweight React State Management with Store
+Lightweight state management core with adapters for React, Vue, Svelte, and Vanilla.
 
-## Installation
+## Packages
 
-You can install the `@ga-ut/store` package from the GitHub repository using the following commands:
+- Core: `@ga-ut/store-core` (framework-agnostic store and types)
+- React adapter: `@ga-ut/store-react` (`useStore` hook)
+- Vue adapter: `@ga-ut/store-vue` (`toRef`, `select`, `bindMethods`)
+- Svelte adapter: `@ga-ut/store-svelte` (`toReadable`, `select`, `bindMethods`)
+- Vanilla helpers: `@ga-ut/store-vanilla` (`watch`, `on`, `select`, `toObservable`)
 
-```bash
-# npm
-npm install @ga-ut/store
-```
-
-```bash
-# Yarn
-yarn add @ga-ut/store
-```
-
-```bash
-# pnpm
-pnpm add @ga-ut/store
-```
-
-```bash
-# Bun
-bun add @ga-ut/store
-```
+Install only what you need. Examples below show per-framework usage.
 
 ## Features
 
-This lightweight state management solution for React applications offers convenient syntax, type safety, and optimized rendering control. Here's an overview of its key features:
+This lightweight state management solution provides convenient syntax, strong type safety, and rendering control through framework adapters.
 
 ### Convenient Syntax
 
 Creating and using a store is straightforward, with no need for separate setters. Simply assign values to this within the store, and pass the store to components that need rendering.
 
-Example:
+Example (React):
 
-```jsx
-import { Store, useStore } from '@ga-ut/store';
+```tsx
+import { Store } from '@ga-ut/store-core';
+import { useStore } from '@ga-ut/store-react';
 
 const countStore = new Store({
   count: 0,
@@ -101,9 +88,9 @@ const store = new Store({
 
 The store automatically optimizes rendering performance. Components will only re-render when their specifically accessed store values change, ensuring efficient updates.
 
-Example:
+Example (React rendering behavior):
 
-```jsx
+```tsx
 function Counter() {
   // Re-renders only when 'count' changes
   const { count } = useStore(countStore);
@@ -148,12 +135,13 @@ In the example above, the `Stats` component will only re-render when the `number
 
 ### Using Immer for Immutable Updates
 
-@ga-ut/store can be seamlessly integrated with Immer to handle immutable updates of complex state structures. This is particularly useful when dealing with nested objects or collections.
+You can integrate with Immer to handle immutable updates of complex state structures.
 
 Example:
 
-```jsx
-import { Store, useStore } from '@ga-ut/store';
+```tsx
+import { Store } from '@ga-ut/store-core';
+import { useStore } from '@ga-ut/store-react';
 import { produce } from 'immer';
 
 interface Address {
@@ -212,3 +200,34 @@ function UserProfile() {
 ```
 
 For more detailed examples and API documentation, please refer to the source code and test files.
+
+## Other frameworks
+
+### Vue
+```ts
+import { Store } from '@ga-ut/store-core'
+import { toRef, bindMethods } from '@ga-ut/store-vue'
+
+const store = new Store({ count: 0, inc() { this.count += 1 } })
+const { ref: count } = toRef(store, s => s.count, (v) => ({ value: v }))
+const { inc } = bindMethods(store)
+```
+
+### Svelte
+```ts
+import { Store } from '@ga-ut/store-core'
+import { toReadable, bindMethods } from '@ga-ut/store-svelte'
+
+const store = new Store({ count: 0, inc() { this.count += 1 } })
+const count$ = toReadable(store, s => s.count)
+const { inc } = bindMethods(store)
+```
+
+### Vanilla
+```ts
+import { Store } from '@ga-ut/store-core'
+import { watch } from '@ga-ut/store-vanilla'
+
+const store = new Store({ count: 0, inc() { this.count += 1 } })
+const un = watch(store, s => s.count, (value) => console.log('count', value))
+```

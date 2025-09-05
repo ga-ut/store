@@ -1,0 +1,58 @@
+name: publish-vue
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/vue/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Ensure jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - id: vue_version
+        run: echo "version=$(jq -r .version ./packages/vue/package.json)" >> "$GITHUB_OUTPUT"
+      - id: vue_exists
+        run: |
+          if npm view @ga-ut/store-vue@${{ steps.vue_version.outputs.version }} version >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - id: core_version
+        run: echo "version=$(jq -r .version ./packages/core/package.json)" >> "$GITHUB_OUTPUT"
+      - id: core_exists
+        run: |
+          if npm view @ga-ut/store-core@${{ steps.core_version.outputs.version }} version >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Wait for core to be available (up to 5m)
+        if: ${{ steps.vue_exists.outputs.exists == 'false' && steps.core_exists.outputs.exists == 'false' }}
+        run: |
+          for i in {1..30}; do
+            if npm view @ga-ut/store-core@${{ steps.core_version.outputs.version }} version >/dev/null 2>&1; then
+              echo "core available"; exit 0; fi
+            echo "core not yet available, retry $i"; sleep 10;
+          done
+          echo "core version not found after waiting"; exit 1
+
+      - name: Publish vue
+        if: ${{ steps.vue_exists.outputs.exists == 'false' }}
+        run: pnpm -F @ga-ut/store-vue run pub
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
