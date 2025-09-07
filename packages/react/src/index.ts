@@ -72,10 +72,15 @@ export function useStore<T extends object>(store: Store<T>) {
   const proxyRef = useRef<any>(proxy);
   proxyRef.current = proxy;
 
-  useLayoutEffect(() => () => {
-    if (unsubRef.current) unsubRef.current();
-  }, []);
+  useLayoutEffect(
+    () => () => {
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+    },
+    []
+  );
 
   return proxy as T;
 }
-

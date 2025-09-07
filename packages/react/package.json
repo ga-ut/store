@@ -1,6 +1,6 @@
 {
   "name": "@ga-ut/store-react",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": false,
   "type": "commonjs",
   "description": "React adapter for @ga-ut/store-core. Fine-grained re-renders via a dependency-tracking useStore hook.",
